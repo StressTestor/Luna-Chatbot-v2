@@ -1,0 +1,18 @@
+# Git
+.gradle/
+.idea/
+.vscode/
+build/
+app/build/
+gradle-*/
+*.zip
+*.jar
+*.apk
+*.dex
+*.class
+*.db
+/memory.json
+/test.db
+app/build/kspCaches/
+app/build/intermediates/
+app/build/tmp/
