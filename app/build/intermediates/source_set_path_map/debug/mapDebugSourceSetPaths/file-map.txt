@@ -1,0 +1,71 @@
+com.luna.chat.app-profileinstaller-1.3.0-0 C:\Users\Joeba\.gradle\caches\8.13\transforms\041df89c080a9fcd8cc87e49b0770dce\transformed\profileinstaller-1.3.0\res
+com.luna.chat.app-play-services-basement-18.1.0-1 C:\Users\Joeba\.gradle\caches\8.13\transforms\059d38881cf16b021dc6e1c1aa1a4831\transformed\play-services-basement-18.1.0\res
+com.luna.chat.app-core-common-2.0.3-2 C:\Users\Joeba\.gradle\caches\8.13\transforms\081f370678b27a9d3068c513d1c58c68\transformed\core-common-2.0.3\res
+com.luna.chat.app-hilt-navigation-1.1.0-3 C:\Users\Joeba\.gradle\caches\8.13\transforms\0bdc36badf8c4bfcb8466ae347946a39\transformed\hilt-navigation-1.1.0\res
+com.luna.chat.app-navigation-common-2.7.5-4 C:\Users\Joeba\.gradle\caches\8.13\transforms\0be5709ec9e3996a47e7aff4b2884e77\transformed\navigation-common-2.7.5\res
+com.luna.chat.app-savedstate-ktx-1.2.1-5 C:\Users\Joeba\.gradle\caches\8.13\transforms\166ad31184ff6118062de2b1b01ca84d\transformed\savedstate-ktx-1.2.1\res
+com.luna.chat.app-runtime-release-6 C:\Users\Joeba\.gradle\caches\8.13\transforms\16d91bbaca94910050b1f546d1f1fb46\transformed\runtime-release\res
+com.luna.chat.app-datastore-preferences-1.0.0-7 C:\Users\Joeba\.gradle\caches\8.13\transforms\171c8099c40726de3a18a9f1329a7950\transformed\datastore-preferences-1.0.0\res
+com.luna.chat.app-core-1.12.0-8 C:\Users\Joeba\.gradle\caches\8.13\transforms\1c884e9accdd82325fb6094768bb5bc1\transformed\core-1.12.0\res
+com.luna.chat.app-navigation-common-ktx-2.7.5-9 C:\Users\Joeba\.gradle\caches\8.13\transforms\1d29aa402b8e7ff15887298806b143c8\transformed\navigation-common-ktx-2.7.5\res
+com.luna.chat.app-material-icons-core-release-10 C:\Users\Joeba\.gradle\caches\8.13\transforms\2108d4a3ee194207db7b28b95384f629\transformed\material-icons-core-release\res
+com.luna.chat.app-lifecycle-livedata-core-2.7.0-11 C:\Users\Joeba\.gradle\caches\8.13\transforms\26455dafd4271bbc52f85323284c6506\transformed\lifecycle-livedata-core-2.7.0\res
+com.luna.chat.app-material-release-12 C:\Users\Joeba\.gradle\caches\8.13\transforms\2d0826403e1bb34376f0f440e01f4942\transformed\material-release\res
+com.luna.chat.app-emoji2-1.4.0-13 C:\Users\Joeba\.gradle\caches\8.13\transforms\2efe3fd588dcfa5aa52c5ecc595a2e7d\transformed\emoji2-1.4.0\res
+com.luna.chat.app-material3-1.1.2-14 C:\Users\Joeba\.gradle\caches\8.13\transforms\36890a583370e8bb788b214efa2b04f8\transformed\material3-1.1.2\res
+com.luna.chat.app-ui-graphics-release-15 C:\Users\Joeba\.gradle\caches\8.13\transforms\3c1a7b0c44471f1b06bac12e195f9d86\transformed\ui-graphics-release\res
+com.luna.chat.app-fragment-1.5.1-16 C:\Users\Joeba\.gradle\caches\8.13\transforms\48275a818de39e8428821c06bfc552b6\transformed\fragment-1.5.1\res
+com.luna.chat.app-lifecycle-process-2.7.0-17 C:\Users\Joeba\.gradle\caches\8.13\transforms\5044fbe94a9ea514c3da3588e2b81a28\transformed\lifecycle-process-2.7.0\res
+com.luna.chat.app-ui-text-release-18 C:\Users\Joeba\.gradle\caches\8.13\transforms\5111d90ce1ef8731cbeb773fb7e286fe\transformed\ui-text-release\res
+com.luna.chat.app-security-crypto-1.1.0-alpha06-19 C:\Users\Joeba\.gradle\caches\8.13\transforms\5215076dd2dd44b64a4bcf39de0013b6\transformed\security-crypto-1.1.0-alpha06\res
+com.luna.chat.app-animation-core-release-20 C:\Users\Joeba\.gradle\caches\8.13\transforms\52781a8ebd9d5b8e9e496ac2ae952dbe\transformed\animation-core-release\res
+com.luna.chat.app-ui-util-release-21 C:\Users\Joeba\.gradle\caches\8.13\transforms\52e1a425c84a5b764fb9833a4d7b1d3b\transformed\ui-util-release\res
+com.luna.chat.app-activity-1.8.2-22 C:\Users\Joeba\.gradle\caches\8.13\transforms\541cb8eed43646e06f11382da8f8f6c8\transformed\activity-1.8.2\res
+com.luna.chat.app-datastore-1.0.0-23 C:\Users\Joeba\.gradle\caches\8.13\transforms\5621a5b08939d412fda23bbc9ea4ba52\transformed\datastore-1.0.0\res
+com.luna.chat.app-foundation-release-24 C:\Users\Joeba\.gradle\caches\8.13\transforms\58eefe2882e69f60fab503ce1a04e989\transformed\foundation-release\res
+com.luna.chat.app-runtime-saveable-release-25 C:\Users\Joeba\.gradle\caches\8.13\transforms\59588f65c76d7b6407ba6b6dd24fa26f\transformed\runtime-saveable-release\res
+com.luna.chat.app-ui-unit-release-26 C:\Users\Joeba\.gradle\caches\8.13\transforms\5fc765a9d0329be3c529ef27b34538de\transformed\ui-unit-release\res
+com.luna.chat.app-lifecycle-viewmodel-compose-2.7.0-27 C:\Users\Joeba\.gradle\caches\8.13\transforms\6190a1b206ae725a3a9bac8a38f63520\transformed\lifecycle-viewmodel-compose-2.7.0\res
+com.luna.chat.app-ui-tooling-preview-release-28 C:\Users\Joeba\.gradle\caches\8.13\transforms\63169a1f4b3649691af73c953002972d\transformed\ui-tooling-preview-release\res
+com.luna.chat.app-lifecycle-runtime-ktx-2.7.0-29 C:\Users\Joeba\.gradle\caches\8.13\transforms\693eb0fbc1360e1e354d1f74be093f53\transformed\lifecycle-runtime-ktx-2.7.0\res
+com.luna.chat.app-annotation-experimental-1.3.0-30 C:\Users\Joeba\.gradle\caches\8.13\transforms\69958de51336ac6f7df7ec1e694cffe3\transformed\annotation-experimental-1.3.0\res
+com.luna.chat.app-ui-tooling-release-31 C:\Users\Joeba\.gradle\caches\8.13\transforms\6d5806422fbcd9f6da96acfa2fb55508\transformed\ui-tooling-release\res
+com.luna.chat.app-navigation-compose-2.7.5-32 C:\Users\Joeba\.gradle\caches\8.13\transforms\6db28b5b64a005a738832d37d9933954\transformed\navigation-compose-2.7.5\res
+com.luna.chat.app-ui-tooling-data-release-33 C:\Users\Joeba\.gradle\caches\8.13\transforms\701134e6c26782e3299a7f536433c272\transformed\ui-tooling-data-release\res
+com.luna.chat.app-startup-runtime-1.1.1-34 C:\Users\Joeba\.gradle\caches\8.13\transforms\73cc964c76492e5dd0c815ac7ad01d5b\transformed\startup-runtime-1.1.1\res
+com.luna.chat.app-lifecycle-runtime-compose-2.7.0-35 C:\Users\Joeba\.gradle\caches\8.13\transforms\75b379283eae368e03b8d833da6d3f45\transformed\lifecycle-runtime-compose-2.7.0\res
+com.luna.chat.app-ui-test-manifest-1.5.4-36 C:\Users\Joeba\.gradle\caches\8.13\transforms\82e099eeb68bea82af811536581233c3\transformed\ui-test-manifest-1.5.4\res
+com.luna.chat.app-ui-text-google-fonts-1.5.4-37 C:\Users\Joeba\.gradle\caches\8.13\transforms\85530192e9b915e9fec53a897913d8dc\transformed\ui-text-google-fonts-1.5.4\res
+com.luna.chat.app-lifecycle-viewmodel-2.7.0-38 C:\Users\Joeba\.gradle\caches\8.13\transforms\96e89a4b7b72c3f6374d7637bec3a46c\transformed\lifecycle-viewmodel-2.7.0\res
+com.luna.chat.app-foundation-layout-release-39 C:\Users\Joeba\.gradle\caches\8.13\transforms\9bd0703687b5edac4ca3dc9dba1bc074\transformed\foundation-layout-release\res
+com.luna.chat.app-sqlite-ktx-2.4.0-40 C:\Users\Joeba\.gradle\caches\8.13\transforms\9ea85c11e7e57d4570350f308f32d615\transformed\sqlite-ktx-2.4.0\res
+com.luna.chat.app-activity-ktx-1.8.2-41 C:\Users\Joeba\.gradle\caches\8.13\transforms\9ed3d37100ae2875fcc95f4760a61c9f\transformed\activity-ktx-1.8.2\res
+com.luna.chat.app-sqlite-framework-2.4.0-42 C:\Users\Joeba\.gradle\caches\8.13\transforms\a5a31b5a84bb0e783464a8be48b82204\transformed\sqlite-framework-2.4.0\res
+com.luna.chat.app-lifecycle-livedata-2.7.0-43 C:\Users\Joeba\.gradle\caches\8.13\transforms\abb8af622c9c36b07114147d84200c6a\transformed\lifecycle-livedata-2.7.0\res
+com.luna.chat.app-navigation-runtime-2.7.5-44 C:\Users\Joeba\.gradle\caches\8.13\transforms\ac5ea99b2c32fc4feb88115b4a358f88\transformed\navigation-runtime-2.7.5\res
+com.luna.chat.app-android-database-sqlcipher-4.5.4-45 C:\Users\Joeba\.gradle\caches\8.13\transforms\ac975847a52b6d7b7251af988cdd9790\transformed\android-database-sqlcipher-4.5.4\res
+com.luna.chat.app-hilt-navigation-compose-1.1.0-46 C:\Users\Joeba\.gradle\caches\8.13\transforms\ae8b6d9987b4c52e0dedc31e4299b2d5\transformed\hilt-navigation-compose-1.1.0\res
+com.luna.chat.app-material-icons-extended-release-47 C:\Users\Joeba\.gradle\caches\8.13\transforms\b2f1cec5a6044694ab03a82a1a818979\transformed\material-icons-extended-release\res
+com.luna.chat.app-customview-poolingcontainer-1.0.0-48 C:\Users\Joeba\.gradle\caches\8.13\transforms\b52c3cf5844f2df73f0684be6f1158cf\transformed\customview-poolingcontainer-1.0.0\res
+com.luna.chat.app-activity-compose-1.8.2-49 C:\Users\Joeba\.gradle\caches\8.13\transforms\b61eef47219ee5ddff4f68d391c2b0d8\transformed\activity-compose-1.8.2\res
+com.luna.chat.app-ui-geometry-release-50 C:\Users\Joeba\.gradle\caches\8.13\transforms\b730249c9bd8a13bd7bdded0a077c2a5\transformed\ui-geometry-release\res
+com.luna.chat.app-room-runtime-2.6.1-51 C:\Users\Joeba\.gradle\caches\8.13\transforms\bb0b541d61f5bf22d20807700a231f1c\transformed\room-runtime-2.6.1\res
+com.luna.chat.app-sqlite-2.4.0-52 C:\Users\Joeba\.gradle\caches\8.13\transforms\bb632c0c15b1d45c41b76d8bcb873140\transformed\sqlite-2.4.0\res
+com.luna.chat.app-room-ktx-2.6.1-53 C:\Users\Joeba\.gradle\caches\8.13\transforms\bbcbd1147df04f8608039ec88889769a\transformed\room-ktx-2.6.1\res
+com.luna.chat.app-ui-release-54 C:\Users\Joeba\.gradle\caches\8.13\transforms\c1bd1657bf62813f0c76a39797a65167\transformed\ui-release\res
+com.luna.chat.app-savedstate-1.2.1-55 C:\Users\Joeba\.gradle\caches\8.13\transforms\ca4dc977a721d1a19b65c7bacb9eec76\transformed\savedstate-1.2.1\res
+com.luna.chat.app-material-ripple-release-56 C:\Users\Joeba\.gradle\caches\8.13\transforms\d4b9352f55090880530c726177ece555\transformed\material-ripple-release\res
+com.luna.chat.app-navigation-runtime-ktx-2.7.5-57 C:\Users\Joeba\.gradle\caches\8.13\transforms\daa6b8721df447c35529d914857dac81\transformed\navigation-runtime-ktx-2.7.5\res
+com.luna.chat.app-lifecycle-viewmodel-savedstate-2.7.0-58 C:\Users\Joeba\.gradle\caches\8.13\transforms\db871804fa3cb2b2f203384cba611fe7\transformed\lifecycle-viewmodel-savedstate-2.7.0\res
+com.luna.chat.app-lifecycle-runtime-2.7.0-59 C:\Users\Joeba\.gradle\caches\8.13\transforms\deceb3aa231fe3114b479600cb1e6732\transformed\lifecycle-runtime-2.7.0\res
+com.luna.chat.app-lifecycle-viewmodel-ktx-2.7.0-60 C:\Users\Joeba\.gradle\caches\8.13\transforms\e1198b9c4e4b5b43d7678ce46e5225a4\transformed\lifecycle-viewmodel-ktx-2.7.0\res
+com.luna.chat.app-core-runtime-2.2.0-61 C:\Users\Joeba\.gradle\caches\8.13\transforms\f2260b772df74536ee2ba9383d6812f7\transformed\core-runtime-2.2.0\res
+com.luna.chat.app-core-ktx-1.12.0-62 C:\Users\Joeba\.gradle\caches\8.13\transforms\f7d5fc64413c769fa41753f020b3667e\transformed\core-ktx-1.12.0\res
+com.luna.chat.app-animation-release-63 C:\Users\Joeba\.gradle\caches\8.13\transforms\fadd63fe9274240d3c858e47ecfc9c6d\transformed\animation-release\res
+com.luna.chat.app-lifecycle-livedata-core-ktx-2.7.0-64 C:\Users\Joeba\.gradle\caches\8.13\transforms\fc65845b08e8b316f18e7e598ab56f4d\transformed\lifecycle-livedata-core-ktx-2.7.0\res
+com.luna.chat.app-resValues-65 D:\Mod Projects\Luna-Chatbot\app\build\generated\res\resValues\debug
+com.luna.chat.app-packageDebugResources-66 D:\Mod Projects\Luna-Chatbot\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.luna.chat.app-packageDebugResources-67 D:\Mod Projects\Luna-Chatbot\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.luna.chat.app-debug-68 D:\Mod Projects\Luna-Chatbot\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.luna.chat.app-debug-69 D:\Mod Projects\Luna-Chatbot\app\src\debug\res
+com.luna.chat.app-main-70 D:\Mod Projects\Luna-Chatbot\app\src\main\res

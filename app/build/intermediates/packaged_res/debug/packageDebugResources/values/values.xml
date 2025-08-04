@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="luna_background">#FFF8FAFC</color>
+    <color name="luna_on_background">#FF1E293B</color>
+    <color name="luna_on_primary">#FFFFFFFF</color>
+    <color name="luna_on_secondary">#FFFFFFFF</color>
+    <color name="luna_on_surface">#FF1E293B</color>
+    <color name="luna_primary">#FF6366F1</color>
+    <color name="luna_secondary">#FF8B5CF6</color>
+    <color name="luna_surface">#FFFFFFFF</color>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="white">#FFFFFFFF</color>
+    <string name="api_configuration">API Configuration</string>
+    <string name="app_description">Your friendly AI companion for learning and fun!</string>
+    <string name="app_name">Luna Chat</string>
+    <string name="chat_input_hint">Type your message here...</string>
+    <string name="clear_chat">Clear Chat</string>
+    <string name="content_filtered">Let\'s talk about something else! What would you like to learn today? 📚</string>
+    <string name="error_api">The AI is having a hiccup. Let\'s try that again! 🤖</string>
+    <string name="error_network">Oops! Check your internet connection and try again 🌐</string>
+    <string name="hello_luna">Hello Luna!</string>
+    <string name="loading">Luna is thinking...</string>
+    <string name="new_chat">Start new chat</string>
+    <string name="parental_controls">Parental Controls</string>
+    <string name="send">Send</string>
+    <string name="send_message">Send message</string>
+    <string name="settings">Settings</string>
+    <string name="theme_selection">Choose Theme</string>
+    <string name="voice_input">Voice input</string>
+    <string name="welcome_message">Hi there! I\'m Luna, your AI friend! 🌙</string>
+    <style name="Theme.Luna" parent="android:Theme.Material.Light">
+        
+    </style>
+    <style name="Theme.Luna.Splash" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowIsTranslucent">false</item>
+    </style>
+</resources>

@@ -1,0 +1,100 @@
+{
+  "mcpServers": {
+    "sqlite": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-sqlite",
+        "--db-path",
+        "test.db"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "mcp_sqlite_read_query",
+        "mcp_sqlite_list_tables",
+        "mcp_sqlite_describe_table"
+      ]
+    },
+    "git": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-git",
+        "--repository",
+        "."
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "mcp_git_git_status",
+        "mcp_git_git_log",
+        "mcp_git_git_diff_unstaged",
+        "git_status"
+      ]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "mcp_fetch_fetch"
+      ]
+    },
+    "time": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-time"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "mcp_time_get_current_time",
+        "mcp_time_convert_time"
+      ]
+    },
+    "filesystem": {
+      "command": "uvx",
+      "args": [
+        "fastmcp",
+        "run",
+        "filesystem_server.py"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "read_file",
+        "list_directory",
+        "get_file_info"
+      ]
+    },
+    "memory": {
+      "command": "uvx",
+      "args": [
+        "memory-mcp-server",
+        "--path",
+        "memory.json"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "store_memory",
+        "retrieve_memory",
+        "search_memory"
+      ]
+    },
+    "ai-memory": {
+      "command": "uvx",
+      "args": [
+        "fastmcp",
+        "run",
+        "ai_memory_server.py"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "store_conversation",
+        "store_fact",
+        "store_preference",
+        "store_insight",
+        "search_memory",
+        "get_context_summary",
+        "get_recent_context"
+      ]
+    }
+  }
+}

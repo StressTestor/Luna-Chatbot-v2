@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#4A90E2"
+        android:pathData="M54,4 A50,50 0 1,1 54,104 A50,50 0 1,1 54,4 Z" />
+    
+    <!-- Luna moon shape -->
+    <path
+        android:fillColor="#FFE4B5"
+        android:pathData="M54,20 A22,22 0 1,1 54,64 A22,22 0 1,1 54,20 Z" />
+    
+    <!-- Moon craters -->
+    <path
+        android:fillColor="#E6D3A3"
+        android:pathData="M48,35 A3,3 0 1,1 48,41 A3,3 0 1,1 48,35 Z" />
+    
+    <path
+        android:fillColor="#E6D3A3"
+        android:pathData="M60,44 A2,2 0 1,1 60,48 A2,2 0 1,1 60,44 Z" />
+    
+    <path
+        android:fillColor="#E6D3A3"
+        android:pathData="M52,49.5 A2.5,2.5 0 1,1 52,54.5 A2.5,2.5 0 1,1 52,49.5 Z" />
+    
+    <!-- Friendly eyes -->
+    <path
+        android:fillColor="#333333"
+        android:pathData="M48,40 A2,2 0 1,1 48,44 A2,2 0 1,1 48,40 Z" />
+    
+    <path
+        android:fillColor="#333333"
+        android:pathData="M60,40 A2,2 0 1,1 60,44 A2,2 0 1,1 60,40 Z" />
+    
+    <!-- Smile -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#333333"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M48,50 Q54,56 60,50" />
+    
+    <!-- Stars around Luna -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M25,30 L27,34 L31,34 L28,37 L29,41 L25,39 L21,41 L22,37 L19,34 L23,34 Z" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,25 L81.5,28 L84.5,28 L82.25,30 L83,33 L80,31.5 L77,33 L77.75,30 L75.5,28 L78.5,28 Z" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M85,55 L86.5,58 L89.5,58 L87.25,60 L88,63 L85,61.5 L82,63 L82.75,60 L80.5,58 L83.5,58 Z" />
+    
+    <!-- Chat bubble -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,70 Q30,70 30,75 L30,82 Q30,87 35,87 L50,87 L45,92 L55,87 L65,87 Q70,87 70,82 L70,75 Q70,70 65,70 Z" />
+        
+</vector>
