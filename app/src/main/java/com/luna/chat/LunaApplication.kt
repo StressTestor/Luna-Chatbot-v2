@@ -7,6 +7,7 @@ import com.luna.chat.data.repository.ApiKeyInitializer
 import com.luna.chat.security.AppIntegrityChecker
 import com.luna.chat.security.SecureLogger
 import com.luna.chat.security.SecurityConfig
+import com.luna.chat.security.IntegrityPolicy
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,16 +41,48 @@ class LunaApplication : Application() {
         
         // Verify app integrity
         if (securityConfig.isIntegrityCheckEnabled() && !verifyAppIntegrity()) {
-            // In a real app, you might want to take more drastic measures
-            // For now, we'll just show a toast and continue
-            Toast.makeText(
-                this,
-                "Security warning: App integrity check failed",
-                Toast.LENGTH_LONG
-            ).show()
-            
-            // Log the security issue
-            secureLogger.error("App integrity check failed")
+            // Determine enforcement behavior from SecurityConfig
+            when (securityConfig.getIntegrityPolicy()) {
+                IntegrityPolicy.ALLOW_WITH_WARNING -> {
+                    // Maintain current behavior: Toast + secureLogger.error
+                    Toast.makeText(
+                        this,
+                        "Security warning: App integrity check failed",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    secureLogger.error("App integrity check failed (policy=ALLOW_WITH_WARNING)")
+                }
+                IntegrityPolicy.LIMITED_MODE -> {
+                    // Enable a global restricted mode flag.
+                    // This can be read by feature gates to disable sensitive capabilities.
+                    // TODO: Define and enforce which features are disabled in limited mode
+                    // e.g., disable local model downloads, restrict network calls, block in-app updates, etc.
+                    securityConfig.setLimitedModeEnabled(true)
+
+                    // Optionally also warn the user non-blockingly
+                    Toast.makeText(
+                        this,
+                        "Limited functionality: integrity check failed",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    secureLogger.error("App integrity check failed (policy=LIMITED_MODE) — limited mode enabled")
+                }
+                IntegrityPolicy.BLOCK_STARTUP -> {
+                    // Log securely and terminate the process gracefully.
+                    // We avoid throwing exceptions; instead, we kill the process after a short, non-blocking notification.
+                    // Future improvement: show a dedicated blocking screen/activity to inform the user and provide support steps.
+                    Toast.makeText(
+                        this,
+                        "App blocked due to failed integrity check",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    secureLogger.error("App integrity check failed (policy=BLOCK_STARTUP) — terminating process")
+                    
+                    // Terminate gracefully
+                    Process.killProcess(Process.myPid())
+                    // No return; process is terminated. Avoid throwing exceptions.
+                }
+            }
         }
         
         // Initialize API key in background
@@ -84,11 +117,10 @@ class LunaApplication : Application() {
      */
     private fun verifyAppIntegrity(): Boolean {
         return try {
-            // In production, you might want to exit the app if integrity check fails
+            // Respect existing AppIntegrityChecker behavior, which allows null installer on debug builds.
             appIntegrityChecker.verifyAppIntegrity()
         } catch (e: Exception) {
-            // Log the exception in production
-            // For now, we'll handle silently and assume the check failed
+            // Handle silently and assume the check failed
             false
         }
     }

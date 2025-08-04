@@ -21,8 +21,11 @@ class SecureApiKeyProvider @Inject constructor(
 
     companion object {
         private const val ENCRYPTED_PREFS_NAME = "luna_secure_prefs"
-        private const val KEY_API_KEY = "groq_api_key"
-        private const val KEY_API_KEY_HASH = "groq_api_key_hash"
+        // Renamed to neutral OpenRouter naming; keep legacy keys for migration
+        private const val KEY_API_KEY = "openrouter_api_key"
+        private const val KEY_API_KEY_HASH = "openrouter_api_key_hash"
+        private const val LEGACY_KEY_API_KEY = "groq_api_key"
+        private const val LEGACY_KEY_API_KEY_HASH = "groq_api_key_hash"
         private const val MASTER_KEY_ALIAS = "luna_master_key"
     }
 
@@ -44,21 +47,32 @@ class SecureApiKeyProvider @Inject constructor(
 
     override suspend fun getApiKey(): String? = withContext(Dispatchers.IO) {
         try {
-            val encryptedKey = encryptedSharedPreferences.getString(KEY_API_KEY, null)
-            if (encryptedKey != null && isApiKeyValid(encryptedKey)) {
-                encryptedKey
-            } else {
-                null
+            // Try new key first
+            val currentKey = encryptedSharedPreferences.getString(KEY_API_KEY, null)
+            if (!currentKey.isNullOrBlank() && isApiKeyValid(currentKey)) {
+                return@withContext currentKey
             }
+            // Migrate legacy Groq key if present
+            val legacyKey = encryptedSharedPreferences.getString(LEGACY_KEY_API_KEY, null)
+            if (!legacyKey.isNullOrBlank() && isApiKeyValid(legacyKey)) {
+                // migrate to new keys
+                encryptedSharedPreferences.edit()
+                    .putString(KEY_API_KEY, legacyKey)
+                    .putString(KEY_API_KEY_HASH, encryptedSharedPreferences.getString(LEGACY_KEY_API_KEY_HASH, null))
+                    .remove(LEGACY_KEY_API_KEY)
+                    .remove(LEGACY_KEY_API_KEY_HASH)
+                    .apply()
+                return@withContext legacyKey
+            }
+            null
         } catch (e: Exception) {
-            // Log error in production, for now return null
             null
         }
     }
 
     override suspend fun setApiKey(apiKey: String) = withContext(Dispatchers.IO) {
         try {
-            // Validate API key format before storing
+            // Validate API key format before storing (relaxed for OpenRouter)
             if (!isValidApiKeyFormat(apiKey)) {
                 throw IllegalArgumentException("Invalid API key format")
             }
@@ -142,10 +156,8 @@ class SecureApiKeyProvider @Inject constructor(
      * Validate API key format (private helper)
      */
     private fun isValidApiKeyFormat(apiKey: String): Boolean {
-        return apiKey.isNotBlank() && 
-               apiKey.startsWith("gsk_") && 
-               apiKey.length >= 20 &&
-               apiKey.matches(Regex("^gsk_[a-zA-Z0-9]+$"))
+        // OpenRouter keys vary; accept non-blank and minimal length
+        return apiKey.isNotBlank() && apiKey.length >= 20
     }
 
     /**

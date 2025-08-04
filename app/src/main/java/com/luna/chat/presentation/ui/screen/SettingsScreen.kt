@@ -1033,14 +1033,14 @@ private fun ApiKeyConfigurationDialog(
                 OutlinedTextField(
                     value = apiKey,
                     onValueChange = { apiKey = it },
-                    label = { Text("Groq API Key") },
-                    placeholder = { Text("gsk_...") },
+                    label = { Text("OpenRouter API Key") },
+                    placeholder = { Text("<your OpenRouter API key>") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 
                 Text(
-                    text = "💡 Get your API key from console.groq.com",
+                    text = "💡 Get your API key from openrouter.ai",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )

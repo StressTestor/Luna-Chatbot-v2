@@ -19,22 +19,38 @@ class ApiConnectivityTester @Inject constructor(
     companion object {
         private const val TEST_TIMEOUT_MS = 10000L // 10 seconds
         private const val TEST_MESSAGE = "Hello! This is a test message to verify API connectivity."
+        private const val DNS_TIMEOUT_MS = 2000L
+        private const val HOST = "api.openrouter.ai"
     }
 
     /**
      * Test API connectivity with the provided API key
      */
     suspend fun testApiConnectivity(apiKey: String): ApiConnectivityResult = withContext(Dispatchers.IO) {
+        // Preflight: network + DNS reachability to avoid confusing errors
+        val preflight = runCatching { preflightConnectivity() }.getOrNull()
+        if (preflight is ApiConnectivityResult.NetworkError) {
+            return@withContext preflight
+        }
+
         try {
             // Test with timeout to avoid hanging
             val result = withTimeoutOrNull(TEST_TIMEOUT_MS) {
                 performConnectivityTest(apiKey)
             }
-            
             result ?: ApiConnectivityResult.Timeout
         } catch (e: Exception) {
             when (e) {
                 is ApiException -> mapApiExceptionToResult(e)
+                is java.net.UnknownHostException -> ApiConnectivityResult.NetworkError(
+                    "DNS can’t resolve $HOST. Set Private DNS to Automatic (or dns.google / one.one.one.one), then retry."
+                )
+                is javax.net.ssl.SSLHandshakeException -> ApiConnectivityResult.NetworkError(
+                    "Secure connection failed. Ensure Date/Time is automatic and try again."
+                )
+                is java.net.SocketTimeoutException -> ApiConnectivityResult.NetworkError(
+                    "Network timed out. Please check your internet connection and try again."
+                )
                 else -> ApiConnectivityResult.UnknownError(e.message ?: "Unknown error occurred")
             }
         }
@@ -47,7 +63,7 @@ class ApiConnectivityTester @Inject constructor(
         try {
             // Create a minimal test request
             val testRequest = GroqChatRequest(
-                model = "meta-llama/llama-4-maverick-17b-128e-instruct",  // Updated to Meta Llama 4 Maverick model
+                model = "deepseek/deepseek-chat-v3-0324:free",  // Enforce deepseek on OpenRouter
                 messages = listOf(
                     GroqMessage(
                         role = "user",
@@ -92,6 +108,24 @@ class ApiConnectivityTester @Inject constructor(
     }
 
     /**
+     * Preflight basic connectivity and DNS resolution for HOST.
+     * Returns NetworkError with an actionable message if checks fail.
+     */
+    private suspend fun preflightConnectivity(): ApiConnectivityResult? = withContext(Dispatchers.IO) {
+        // Lightweight DNS check with timeout
+        val dnsOk = withTimeoutOrNull(DNS_TIMEOUT_MS) {
+            runCatching { java.net.InetAddress.getByName(HOST) }.isSuccess
+        } ?: false
+
+        if (!dnsOk) {
+            return@withContext ApiConnectivityResult.NetworkError(
+                "DNS cannot resolve $HOST. On your phone: Settings > Network & internet > Private DNS → Automatic (or dns.google / one.one.one.one). Then retry."
+            )
+        }
+        return@withContext null
+    }
+
+    /**
      * Map API exceptions to connectivity results
      */
     private fun mapApiExceptionToResult(exception: ApiException): ApiConnectivityResult {
@@ -108,7 +142,7 @@ class ApiConnectivityTester @Inject constructor(
             is ApiException.HttpException -> {
                 if (exception.isServerError()) {
                     ApiConnectivityResult.ServerError(
-                        "Groq server is having issues. Please try again later! 🔧"
+                        "The AI API is having issues. Please try again later! 🔧"
                     )
                 } else {
                     ApiConnectivityResult.InvalidApiKey(
@@ -137,14 +171,8 @@ class ApiConnectivityTester @Inject constructor(
     fun validateApiKeyFormat(apiKey: String): ApiKeyValidationResult {
         return when {
             apiKey.isBlank() -> ApiKeyValidationResult.Empty
-            !apiKey.startsWith("gsk_") -> ApiKeyValidationResult.InvalidFormat(
-                "Groq API keys should start with 'gsk_'"
-            )
             apiKey.length < 20 -> ApiKeyValidationResult.TooShort(
                 "API key appears to be too short"
-            )
-            !apiKey.matches(Regex("^gsk_[a-zA-Z0-9_-]+$")) -> ApiKeyValidationResult.InvalidCharacters(
-                "API key contains invalid characters"
             )
             else -> ApiKeyValidationResult.Valid
         }

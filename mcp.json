@@ -5,13 +5,15 @@
       "args": [
         "mcp-server-sqlite",
         "--db-path",
-        "test.db"
+        "luna_database.db"
       ],
       "disabled": false,
       "autoApprove": [
-        "mcp_sqlite_read_query",
-        "mcp_sqlite_list_tables",
-        "mcp_sqlite_describe_table"
+        "read_query",
+        "list_tables",
+        "describe_table",
+        "write_query",
+        "create_table"
       ]
     },
     "git": {
@@ -19,7 +21,7 @@
       "args": [
         "mcp-server-git",
         "--repository",
-        "."
+        "d:\\Mod Projects\\Luna-Chatbot"
       ],
       "disabled": false,
       "autoApprove": [

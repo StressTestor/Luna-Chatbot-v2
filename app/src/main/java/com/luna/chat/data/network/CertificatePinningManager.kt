@@ -6,24 +6,44 @@ import javax.inject.Singleton
 
 /**
  * Manager for certificate pinning to prevent man-in-the-middle attacks
+ *
+ * Host alignment: Retrofit BASE_URL is set to https://api.openrouter.ai/v1/,
+ * so we pin the same host (api.openrouter.ai) to ensure pinning is active.
  */
 @Singleton
 class CertificatePinningManager @Inject constructor() {
 
     /**
-     * Creates a CertificatePinner for OkHttp client
-     * The pins are SHA-256 hashes of the public key (SubjectPublicKeyInfo) of the certificate
-     * 
-     * @return CertificatePinner instance
+     * Creates a CertificatePinner for OkHttp client.
+     * Pins are SHA-256 hashes of the Subject Public Key Info (SPKI) of the certificate's public key.
+     *
+     * Rotation notes:
+     * - Always maintain at least one backup pin to allow seamless rotation.
+     * - Update pins promptly if OpenRouter rotates keys/certs to avoid client lockout.
      */
     fun createCertificatePinner(): CertificatePinner {
+        // Certificate pinning for OpenRouter (api.openrouter.ai)
+        // Extraction command (documented):
+        //   openssl s_client -connect api.openrouter.ai:443 -servername api.openrouter.ai < /dev/null |
+        //   openssl x509 -pubkey -noout | openssl pkey -pubin -outform DER |
+        //   openssl dgst -sha256 -binary | openssl base64
+        //
+        // Known SPKI pins:
+        // Primary (as provided): faEjnRb/+sG+MnJzfe4TiH581Qe9nEZlNoQdNAdonrY=
+        //
+        // TODO (backup SPKI pin): Populate a verified secondary pin for api.openrouter.ai before release.
+        // Actionable guidance:
+        // 1) Run the above openssl extraction against the full cert chain and identify at least one alternate valid SPKI.
+        // 2) Validate the resulting base64 against a live connection AND an independent source.
+        // 3) Add as: .add("api.openrouter.ai", "sha256/<BACKUP_PIN_BASE64>")
+        // 4) Rebuild and perform a live smoke test to ensure both pins work (primary/backup).
+        // 5) Document rotation date and source of verification in release notes.
+        //
+        // Placeholder anchor for secondary pin (no behavior change):
+        // .add("api.openrouter.ai", "sha256/<SECONDARY_SPki_PIN_BASE64>") // TODO: Insert verified backup SPKI after governance approval
         return CertificatePinner.Builder()
-            // Pin the API server certificate
-            // Replace "api.example.com" with your actual API domain
-            // Replace the hash with the actual hash of your server's certificate
-            .add("api.example.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-            // Add backup pins for certificate rotation
-            .add("api.example.com", "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=")
+            .add("api.openrouter.ai", "sha256/faEjnRb/+sG+MnJzfe4TiH581Qe9nEZlNoQdNAdonrY=")
+            // .add("api.openrouter.ai", "sha256/<BACKUP_PIN_BASE64>") // TODO: add verified backup SPKI pin prior to enabling production vision
             .build()
     }
     

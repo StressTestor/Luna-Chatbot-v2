@@ -5,10 +5,18 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Secure logging utility that prevents sensitive information from being logged
+ * Secure logging utility that prevents sensitive information from being logged.
+ *
+ * Gating policy:
+ * - When SecurityConfig.isSecureLoggingEnabled() == false:
+ *   - debug/info/warn are no-ops to avoid accidental data leakage.
+ *   - error/logException still emit sanitized minimal messages for operability.
+ * - sanitizeMessage() must be applied to any emitted text in all cases.
  */
 @Singleton
-class SecureLogger @Inject constructor() {
+class SecureLogger @Inject constructor(
+    private val securityConfig: SecurityConfig
+) {
 
     companion object {
         private const val TAG = "LunaSecure"
@@ -28,40 +36,43 @@ class SecureLogger @Inject constructor() {
     }
     
     /**
-     * Log a debug message
+     * Log a debug message (no-op when secure logging disabled).
      * @param message The message to log
      * @param tag Optional tag (defaults to LunaSecure)
      */
     fun debug(message: String, tag: String = TAG) {
+        if (!securityConfig.isSecureLoggingEnabled()) return
         Log.d(tag, sanitizeMessage(message))
     }
     
     /**
-     * Log an info message
+     * Log an info message (no-op when secure logging disabled).
      * @param message The message to log
      * @param tag Optional tag (defaults to LunaSecure)
      */
     fun info(message: String, tag: String = TAG) {
+        if (!securityConfig.isSecureLoggingEnabled()) return
         Log.i(tag, sanitizeMessage(message))
     }
     
     /**
-     * Log a warning message
+     * Log a warning message (no-op when secure logging disabled).
      * @param message The message to log
      * @param tag Optional tag (defaults to LunaSecure)
      */
     fun warn(message: String, tag: String = TAG) {
+        if (!securityConfig.isSecureLoggingEnabled()) return
         Log.w(tag, sanitizeMessage(message))
     }
     
     /**
-     * Log an error message
+     * Log an error message (always allowed, sanitized).
      * @param message The message to log
      * @param throwable Optional throwable
      * @param tag Optional tag (defaults to LunaSecure)
      */
     fun error(message: String, throwable: Throwable? = null, tag: String = TAG) {
-        val sanitizedMessage = sanitizeMessage(message)
+        val sanitizedMessage = sanitizeMessage(message.take(512))
         if (throwable != null) {
             Log.e(tag, sanitizedMessage, throwable)
         } else {
@@ -95,13 +106,13 @@ class SecureLogger @Inject constructor() {
     }
     
     /**
-     * Logs an exception securely
+     * Logs an exception securely (always allowed, sanitized).
      * @param throwable The throwable to log
      * @param message Optional message to include
      * @param tag Optional tag (defaults to LunaSecure)
      */
     fun logException(throwable: Throwable, message: String? = null, tag: String = TAG) {
-        val logMessage = message?.let { sanitizeMessage(it) } ?: "Exception occurred"
+        val logMessage = message?.let { sanitizeMessage(it.take(512)) } ?: "Exception occurred"
         Log.e(tag, logMessage, throwable)
     }
 }

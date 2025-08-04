@@ -1,0 +1,37 @@
+[2025-08-04T09:06:42Z] MCP Context Sweep and Test Status Update
+- Vision Integration (2025-08-04)
+  * Security posture: Pinned host api.openrouter.ai with primary SPKI set; backup SPKI pin is still TODO with documented guidance (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/data/network/CertificatePinningManager.kt:45), [Kotlin.comment()](app/src/main/java/com/luna/chat/data/network/CertificatePinningManager.kt:34)).
+  * Governance: visionModelApproved default=false; Limited Mode gating in place (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/security/SecurityConfig.kt:238), [Kotlin.declaration()](app/src/main/java/com/luna/chat/data/repository/VisionRepositoryImpl.kt:31)).
+  * In-memory processing: Images are handled as data URLs in DTOs; no filesystem I/O (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/data/remote/dto/VisionChatRequest.kt:31), [Kotlin.comment()](app/src/main/java/com/luna/chat/data/remote/api/VisionApiService.kt:23)).
+  * Networking: BASE_URL=https://api.openrouter.ai/v1/, interceptors best-effort for auth, redaction enforced, release logging NONE (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/di/NetworkModule.kt:50), [Kotlin.function()](app/src/main/java/com/luna/chat/di/NetworkModule.kt:131)).
+  * Build/test: Unit tests blocked by Android Gradle ASM/Hilt instrumenting UpdateReceiver expecting Hilt_UpdateReceiver.class; attempted CLI blacklist and instrumentation disable still failed (see [Gradle.build()](app/build.gradle:1)). Requires unit-test-only ASM/classpath exclusion of com/luna/chat/update/receiver/**.
+  * Follow-ups: Add backup SPKI pin; set EXPECTED_SIGNATURE_HASH per variant in AppIntegrityChecker; re-run unit tests with Gradle 8.13 after exclusions.
+
+- Luna Chat Project Baseline (Post-PR1-PR7)
+  * OpenRouter baseline intact: caller-provided Authorization Bearer; logs redacted; release logging NONE (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/data/remote/api/GroqApiService.kt:70), [Kotlin.function()](app/src/main/java/com/luna/chat/di/NetworkModule.kt:131)).
+  * Governance/pinning roadmap items tracked in docs (see [Markdown.section()](docs/ROADMAP.md:19), [Markdown.section()](context.md:62)).
+  * Test inventory includes DTO/repo/use case/validators; execution currently blocked by ASM/Hilt instrumentation; proceed after test-only exclusions.
+
+Action Items
+1) Add unit-test-only ASM/classpath excludes for com/luna/chat/update/receiver/** in app/build.gradle.
+2) Populate backup SPKI pin for api.openrouter.ai prior to production.
+3) Configure EXPECTED_SIGNATURE_HASH per variant in AppIntegrityChecker.
+4) Re-run: .\gradle-8.13\bin\gradle.bat clean testDebugUnitTest --no-daemon --stacktrace --warning-mode all
+[2025-08-04 18:08 UTC] MCP Memory Sync (local log) — Vision + Baseline
+- Vision Integration (2025-08-04)
+  - Security posture: Pinning host api.openrouter.ai aligned to BASE_URL; primary SPKI set; backup SPKI remains TODO (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/data/network/CertificatePinningManager.kt:45), [Kotlin.comment()](app/src/main/java/com/luna/chat/data/network/CertificatePinningManager.kt:34)).
+  - Integrity: EXPECTED_SIGNATURE_HASH unset; policy ALLOW_WITH_WARNING by default (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/security/AppIntegrityChecker.kt:45), [Kotlin.declaration()](app/src/main/java/com/luna/chat/security/SecurityConfig.kt:38)).
+  - Secure logging: Redaction enforced; release logging NONE (see [Kotlin.function()](app/src/main/java/com/luna/chat/di/NetworkModule.kt:131), [Kotlin.function()](app/src/main/java/com/luna/chat/security/SecureLogger.kt:88)).
+  - Governance: visionModelApproved default=false; Limited Mode gate disables vision flow (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/security/SecurityConfig.kt:238), [Kotlin.declaration()](app/src/main/java/com/luna/chat/data/repository/VisionRepositoryImpl.kt:31)).
+  - Vision pipeline: In-memory images via data URLs; VisionApiService requires explicit Authorization (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/data/remote/dto/VisionChatRequest.kt:31), [Kotlin.declaration()](app/src/main/java/com/luna/chat/data/remote/api/VisionApiService.kt:26)).
+  - Networking DI: BASE_URL=https://api.openrouter.ai/v1/; auth/redaction/logging interceptors configured (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/di/NetworkModule.kt:50), [Kotlin.function()](app/src/main/java/com/luna/chat/di/NetworkModule.kt:153)).
+  - SQLite MCP verified after fix: tables chat_messages and user_preferences; schemas captured via MCP (list_tables, describe_table).
+  - Next: Add backup SPKI, set EXPECTED_SIGNATURE_HASH per variant, unblock unit tests with ASM/Hilt exclusions.
+
+- Luna Chat Project Baseline (Post-PR1-PR7)
+  - OpenRouter baseline: Callers supply Authorization; logs redacted; release logging NONE (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/data/remote/api/GroqApiService.kt:70), [Kotlin.function()](app/src/main/java/com/luna/chat/di/NetworkModule.kt:131)).
+  - Governance policy centralized (see [Markdown.section()](context.md:62)); vision governed off by default (see [Kotlin.declaration()](app/src/main/java/com/luna/chat/security/SecurityConfig.kt:238)).
+  - SQLite MCP schemas recorded:
+    - chat_messages: id TEXT PK, content TEXT NOT NULL, is_from_user INTEGER NOT NULL, timestamp INTEGER NOT NULL, session_id TEXT NOT NULL, status TEXT NOT NULL.
+    - user_preferences: id INTEGER PK, selected_theme TEXT NOT NULL, parental_controls_enabled INTEGER NOT NULL, api_key_configured INTEGER NOT NULL, first_time_user INTEGER NOT NULL, auto_clear_history_days INTEGER NOT NULL, content_filter_enabled INTEGER NOT NULL, voice_input_enabled INTEGER NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL.
+  - Pending: Unit test unblock (ASM/Hilt exclusions), static checks, instrumentation tests, runtime smoke test with in-memory vision flow.

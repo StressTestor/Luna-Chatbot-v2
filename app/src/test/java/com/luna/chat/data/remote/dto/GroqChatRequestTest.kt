@@ -28,7 +28,7 @@ class GroqChatRequestTest {
         val messages = listOf(
             GroqMessage.createUserMessage("Hello, AI!")
         )
-        val customModel = "llama2-70b-4096"
+        val customModel = "deepseek/deepseek-chat-v3-0324:free"
         val customTemp = 0.5
         val customTokens = 2000
         
@@ -153,7 +153,7 @@ class GroqChatRequestTest {
     fun `deserialize from JSON should create valid object`() {
         val json = """
             {
-                "model": "mixtral-8x7b-32768",
+                "model": "deepseek/deepseek-chat-v3-0324:free",
                 "messages": [
                     {
                         "role": "user",
@@ -169,7 +169,7 @@ class GroqChatRequestTest {
         val request = gson.fromJson(json, GroqChatRequest::class.java)
         
         assertTrue(request.isValid())
-        assertEquals("mixtral-8x7b-32768", request.model)
+        assertEquals("deepseek/deepseek-chat-v3-0324:free", request.model)
         assertEquals(1, request.messages.size)
         assertEquals("Hello, AI!", request.messages[0].content)
         assertEquals(0.7, request.temperature, 0.001)

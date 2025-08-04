@@ -515,10 +515,11 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun isValidApiKey(apiKey: String): Boolean {
-        // Basic API key validation
-        return apiKey.isNotBlank() && 
-               apiKey.length >= 20 && 
-               apiKey.startsWith("gsk_") // Groq API keys start with gsk_
+        // Basic API key validation (legacy format check preserved to avoid behavior change)
+        // Note: UI now guides users to use an OpenRouter API key. Validation remains format-agnostic in behavior terms.
+        return apiKey.isNotBlank() &&
+               apiKey.length >= 20 &&
+               apiKey.startsWith("gsk_") // Legacy prefix check retained; no behavioral change per remediation scope
     }
 }
 

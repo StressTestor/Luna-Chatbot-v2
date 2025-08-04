@@ -58,3 +58,20 @@
 - Focus on child safety and educational value
 - MCP servers provide enhanced development capabilities for database work
 - Model upgrades must maintain child safety compliance per child-safety.md guidelines
+
+## Model Usage Policy (2025-08-04)
+- Until further notice, only [Markdown.section()](openrouter/horizon-beta:1) should be used for all development, testing, and evaluation.
+- Do not switch models (including Groq model variants) without explicit approval and corresponding safety verification updates.
+- If a model change is required, update this section, the verification tools, and content filtering rules accordingly.
+
+## Model Usage Policy (2025-08-04) — Update
+- Until further notice, only [Markdown.section()](deepseek/deepseek-chat-v3-0324:1) should be used for all development, testing, and evaluation.
+- Do not switch models (including Groq model variants or other OpenRouter models) without explicit approval and corresponding safety verification updates.
+- If a model change is required, update this section, the verification tools, and content filtering rules accordingly.
+
+## Vision Integration
+- In-memory handling: images are passed as data URLs (data:<mime>;base64,...) in DTOs; no filesystem I/O is used during analysis.
+- Host/pinning alignment: network calls use api.openrouter.ai; certificate pinning is configured for the same host, with a documented placeholder for a secondary SPKI pin.
+- Authorization discipline: Authorization header is constructed upstream and passed to the API service; secure logging policy ensures no sensitive tokens are emitted.
+- Gating: feature is protected by both limited-mode policy and a governance-controlled toggle. Default governance remains disabled until explicitly approved via [Kotlin.declaration()](app/src/main/java/com/luna/chat/security/SecurityConfig.kt:200).
+- Child-safety filtering: AI outputs are scrubbed for PII and passed through content filtering before being returned to callers. Temperature/top_p are derived from security configuration to maintain conservative defaults.

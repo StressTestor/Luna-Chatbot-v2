@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,7 +43,10 @@ import com.luna.chat.presentation.performance.shouldRenderItem
 import com.luna.chat.domain.entity.ChatMessage
 import com.luna.chat.domain.entity.ChatSession
 import com.luna.chat.domain.entity.MessageStatus
+import com.luna.chat.domain.usecase.ProcessImageUseCase
 import com.luna.chat.presentation.theme.LunaTheme
+import com.luna.chat.presentation.ui.components.ImageAttachmentButton
+import com.luna.chat.presentation.ui.components.ImagePreviewDialog
 import com.luna.chat.presentation.ui.components.MessageBubble
 import com.luna.chat.presentation.ui.components.MessageInput
 import com.luna.chat.presentation.ui.components.TypingIndicator
@@ -64,6 +68,16 @@ fun ChatScreen(
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+
+    // Image attachment local UI state (in-memory only)
+    var selectedImageBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var selectedImageMime by remember { mutableStateOf<String?>(null) }
+    var showPreview by remember { mutableStateOf(false) }
+    var isAnalyzing by remember { mutableStateOf(false) }
+
+    // Avoid composable calls inside remember calculation; hoist a nullable reference placeholder.
+    // Actual processing is routed via ViewModel methods (processImage/generateReplyFromVisionSummary).
+    val processImageUseCase: ProcessImageUseCase? = null
     
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(currentSession.messages.size) {
@@ -93,22 +107,50 @@ fun ChatScreen(
             )
         },
         bottomBar = {
-            MessageInput(
-                message = messageText,
-                onMessageChange = { messageText = it },
-                onSendMessage = {
-                    if (messageText.isNotBlank()) {
-                        viewModel.sendMessage(messageText)
-                        messageText = ""
-                    }
-                },
-                onVoiceInput = {
-                    // TODO: Implement voice input in future task
-                },
-                isEnabled = uiState.canSendMessage,
-                isLoading = uiState.isLoading,
-                modifier = Modifier.testTag("chat_message_input")
-            )
+            Column {
+                // Attachment row aligned with MessageInput actions
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .semantics { contentDescription = "Message actions" },
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    // Image attachment button mirrors component patterns
+                    ImageAttachmentButton(
+                        enabled = uiState.canSendMessage && !uiState.isLoading && !isAnalyzing,
+                        onClick = {
+                            // Stub image picker: expect bytes/mime from a provided lambda later
+                            // For now, use a no-op that toggles preview if bytes are set by external caller
+                            if (selectedImageBytes != null && selectedImageMime != null) {
+                                showPreview = true
+                            } else {
+                                // External integration point (Activity/VM) should set selectedImageBytes/mime via callback
+                                // No-op to maintain compile safety
+                            }
+                        },
+                        modifier = Modifier
+                            .testTag("attach_image_action")
+                    )
+                }
+
+                MessageInput(
+                    message = messageText,
+                    onMessageChange = { messageText = it },
+                    onSendMessage = {
+                        if (messageText.isNotBlank()) {
+                            viewModel.sendMessage(messageText)
+                            messageText = ""
+                        }
+                    },
+                    onVoiceInput = {
+                        // TODO: Implement voice input in future task
+                    },
+                    isEnabled = uiState.canSendMessage && !isAnalyzing,
+                    isLoading = uiState.isLoading,
+                    modifier = Modifier.testTag("chat_message_input")
+                )
+            }
         }
     ) { paddingValues ->
         Box(
@@ -116,9 +158,50 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Image preview dialog
+            if (showPreview && selectedImageBytes != null && selectedImageMime != null) {
+                ImagePreviewDialog(
+                    imageBytes = selectedImageBytes!!,
+                    mimeType = selectedImageMime!!,
+                    onConfirm = {
+                        showPreview = false
+                        val bytes = selectedImageBytes
+                        val mime = selectedImageMime
+                        if (bytes != null && mime != null) {
+                            isAnalyzing = true
+                            coroutineScope.launch {
+                                // Governance guard remains disabled by default.
+                                val visionToTextEnabled = false // TODO: enable when governance approves combined response
+                                // Execute analysis via ViewModel/UseCase.
+                                val summary = try {
+                                    val vmResult = viewModel.processImage(bytes, mime)
+                                    vmResult ?: "Vision analysis unavailable right now."
+                                } catch (e: Exception) {
+                                    "Vision analysis unavailable right now."
+                                }
+                                if (visionToTextEnabled) {
+                                    // Route through existing send path to preserve filtering/pinning/logging.
+                                    viewModel.generateReplyFromVisionSummary(summary)
+                                } else {
+                                    // Current default behavior: append summary as assistant message.
+                                    viewModel.appendAssistantMessage(summary)
+                                }
+                                isAnalyzing = false
+                                // Clear selection after processing
+                                selectedImageBytes = null
+                                selectedImageMime = null
+                            }
+                        }
+                    },
+                    onDismiss = {
+                        showPreview = false
+                    }
+                )
+            }
+
             ChatContent(
                 session = currentSession,
-                uiState = uiState,
+                uiState = if (isAnalyzing) uiState.copy(isAiThinking = true) else uiState,
                 listState = listState,
                 onRetryMessage = { viewModel.retryLastMessage() },
                 onDismissError = { viewModel.dismissError() },
@@ -276,6 +359,19 @@ private fun ChatContent(
                     modifier = Modifier
                         .animateItemPlacement()
                         .testTag("chat_typing_indicator")
+                )
+            }
+        }
+
+        // Image analysis indicator
+        if (uiState.showTypingIndicator || (uiState.isAiThinking && !uiState.isLoading)) {
+            item(key = "analyzing_indicator") {
+                com.luna.chat.presentation.ui.components.SimpleTypingIndicator(
+                    isVisible = true,
+                    message = "Analyzing image…",
+                    modifier = Modifier
+                        .animateItemPlacement()
+                        .testTag("analyzing_image_indicator")
                 )
             }
         }

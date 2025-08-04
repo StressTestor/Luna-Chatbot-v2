@@ -18,7 +18,9 @@ class SimpleApiKeyProvider @Inject constructor(
 
     companion object {
         private const val PREFS_NAME = "luna_api_prefs"
-        private const val KEY_API_KEY = "groq_api_key"
+        // Use provider-agnostic key name; keep legacy for migration in get/set
+        private const val KEY_API_KEY = "openrouter_api_key"
+        private const val LEGACY_KEY_API_KEY = "groq_api_key"
     }
 
     private val sharedPreferences: SharedPreferences by lazy {
@@ -26,12 +28,24 @@ class SimpleApiKeyProvider @Inject constructor(
     }
 
     override suspend fun getApiKey(): String? {
-        return sharedPreferences.getString(KEY_API_KEY, null)
+        // Prefer new key; fall back to legacy and migrate forward
+        val current = sharedPreferences.getString(KEY_API_KEY, null)
+        if (!current.isNullOrBlank()) return current
+        val legacy = sharedPreferences.getString(LEGACY_KEY_API_KEY, null)
+        if (!legacy.isNullOrBlank()) {
+            sharedPreferences.edit()
+                .putString(KEY_API_KEY, legacy)
+                .remove(LEGACY_KEY_API_KEY)
+                .apply()
+            return legacy
+        }
+        return null
     }
 
     override suspend fun setApiKey(apiKey: String) {
         sharedPreferences.edit()
             .putString(KEY_API_KEY, apiKey)
+            .remove(LEGACY_KEY_API_KEY)
             .apply()
     }
 
@@ -47,9 +61,7 @@ class SimpleApiKeyProvider @Inject constructor(
     }
 
     override suspend fun validateApiKeyFormat(apiKey: String): Boolean {
-        return apiKey.isNotBlank() && 
-               apiKey.startsWith("gsk_") && 
-               apiKey.length >= 20 &&
-               apiKey.matches(Regex("^gsk_[a-zA-Z0-9]+$"))
+        // OpenRouter keys vary; accept non-blank and minimal length
+        return apiKey.isNotBlank() && apiKey.length >= 20
     }
 }

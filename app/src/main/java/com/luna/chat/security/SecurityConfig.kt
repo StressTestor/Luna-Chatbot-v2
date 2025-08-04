@@ -23,6 +23,11 @@ class SecurityConfig @Inject constructor(
         private const val KEY_SECURE_LOGGING_ENABLED = "secure_logging_enabled"
         private const val KEY_CONTENT_FILTER_LEVEL = "content_filter_level"
         private const val KEY_PARENTAL_CONTROLS_ENABLED = "parental_controls_enabled"
+        // New: integrity policy and limited mode gate
+        private const val KEY_INTEGRITY_POLICY = "integrity_policy"
+        private const val KEY_LIMITED_MODE_ENABLED = "limited_mode_enabled"
+        // New: governance-controlled vision model approval toggle
+        private const val KEY_VISION_MODEL_APPROVED = "vision_model_approved"
         
         // Default values
         private const val DEFAULT_CERTIFICATE_PINNING_ENABLED = true
@@ -30,6 +35,11 @@ class SecurityConfig @Inject constructor(
         private const val DEFAULT_SECURE_LOGGING_ENABLED = true
         private const val DEFAULT_CONTENT_FILTER_LEVEL = "medium" // low, medium, high
         private const val DEFAULT_PARENTAL_CONTROLS_ENABLED = true
+        // New: default policy is allow-with-warning for dev ergonomics
+        private val DEFAULT_INTEGRITY_POLICY = IntegrityPolicy.ALLOW_WITH_WARNING
+        private const val DEFAULT_LIMITED_MODE_ENABLED = false
+        // New: governance default must remain disabled until explicitly approved
+        private const val DEFAULT_VISION_MODEL_APPROVED = false
         
         // Child safety parameters
         const val MAX_TEMPERATURE = 0.7f
@@ -83,6 +93,24 @@ class SecurityConfig @Inject constructor(
         if (!securityPrefs.contains(KEY_PARENTAL_CONTROLS_ENABLED)) {
             securityPrefs.edit()
                 .putBoolean(KEY_PARENTAL_CONTROLS_ENABLED, DEFAULT_PARENTAL_CONTROLS_ENABLED)
+                .apply()
+        }
+
+        // New default initialization for integrity policy (string) and limited mode (boolean)
+        if (!securityPrefs.contains(KEY_INTEGRITY_POLICY)) {
+            securityPrefs.edit()
+                .putString(KEY_INTEGRITY_POLICY, DEFAULT_INTEGRITY_POLICY.name)
+                .apply()
+        }
+        if (!securityPrefs.contains(KEY_LIMITED_MODE_ENABLED)) {
+            securityPrefs.edit()
+                .putBoolean(KEY_LIMITED_MODE_ENABLED, DEFAULT_LIMITED_MODE_ENABLED)
+                .apply()
+        }
+        // Governance-controlled toggle default: MUST remain false until explicitly approved
+        if (!securityPrefs.contains(KEY_VISION_MODEL_APPROVED)) {
+            securityPrefs.edit()
+                .putBoolean(KEY_VISION_MODEL_APPROVED, DEFAULT_VISION_MODEL_APPROVED)
                 .apply()
         }
     }
@@ -176,6 +204,48 @@ class SecurityConfig @Inject constructor(
     fun setParentalControlsEnabled(enabled: Boolean) {
         securityPrefs.edit()
             .putBoolean(KEY_PARENTAL_CONTROLS_ENABLED, enabled)
+            .apply()
+    }
+
+    // New: Integrity policy getters/setters
+    fun getIntegrityPolicy(): IntegrityPolicy {
+        val stored = securityPrefs.getString(KEY_INTEGRITY_POLICY, DEFAULT_INTEGRITY_POLICY.name)
+        return runCatching { IntegrityPolicy.valueOf(stored ?: DEFAULT_INTEGRITY_POLICY.name) }
+            .getOrDefault(DEFAULT_INTEGRITY_POLICY)
+    }
+
+    fun setIntegrityPolicy(policy: IntegrityPolicy) {
+        securityPrefs.edit()
+            .putString(KEY_INTEGRITY_POLICY, policy.name)
+            .apply()
+    }
+
+    // New: Limited mode feature gate for policy LIMITED_MODE
+    fun isLimitedModeEnabled(): Boolean {
+        return securityPrefs.getBoolean(KEY_LIMITED_MODE_ENABLED, DEFAULT_LIMITED_MODE_ENABLED)
+    }
+
+    fun setLimitedModeEnabled(enabled: Boolean) {
+        securityPrefs.edit()
+            .putBoolean(KEY_LIMITED_MODE_ENABLED, enabled)
+            .apply()
+    }
+    
+    /**
+     * Governance-controlled toggle for enabling vision model usage.
+     * This is a governance-controlled toggle. Default must remain false until explicitly approved.
+     */
+    fun isVisionModelApproved(): Boolean {
+        return securityPrefs.getBoolean(KEY_VISION_MODEL_APPROVED, DEFAULT_VISION_MODEL_APPROVED)
+    }
+
+    /**
+     * Governance-controlled setter for vision model approval.
+     * This is a governance-controlled toggle. Default must remain false until explicitly approved.
+     */
+    fun setVisionModelApproved(enabled: Boolean) {
+        securityPrefs.edit()
+            .putBoolean(KEY_VISION_MODEL_APPROVED, enabled)
             .apply()
     }
     

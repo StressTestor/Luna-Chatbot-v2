@@ -400,3 +400,4 @@ class ContentFilterUseCaseTest {
         assertNotNull(result.reason)
         assertNotNull(result.childFriendlyMessage)
     }
+}

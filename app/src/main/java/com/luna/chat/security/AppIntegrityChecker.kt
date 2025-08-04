@@ -18,9 +18,31 @@ class AppIntegrityChecker @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     companion object {
-        // SHA-256 hash of the app's signing certificate
-        // This should be updated with the actual hash of your app's signing certificate
-        private const val EXPECTED_SIGNATURE_HASH = "PUT_YOUR_APP_SIGNATURE_HASH_HERE"
+        /**
+         * SHA-256 hash of the app's signing certificate.
+         *
+         * TODO(team): Set this per build variant/keystore.
+         * - For each signing config (debug, release, internal, etc.), compute the SHA-256 of the
+         *   signing certificate and set the expected value via build-time constants or variant-
+         *   specific sources.
+         *
+         * How to compute:
+         * 1) Using keytool (JDK):
+         *    keytool -list -v -keystore path/to/keystore.jks -alias your_alias -storepass your_storepass -keypass your_keypass
+         *    Then take the "SHA256" of the certificate (hex, lowercase) without colons.
+         *
+         * 2) From a signed APK/AAB:
+         *    Use apksigner or aapt to extract the signing cert and compute SHA-256.
+         *
+         * 3) Programmatically in a debug build:
+         *    Run getAppSignatures() on the installed build and log getSignatureHash(signature).
+         *
+         * Recommended:
+         * - Inject via BuildConfig or flavors to avoid hardcoding different values here.
+         * - Keep current behavior if unset (empty string): signature check will fail, allowing
+         *   policy to decide response (warning/limited/block).
+         */
+        private const val EXPECTED_SIGNATURE_HASH: String = ""
         
         // Package name of the app
         private const val EXPECTED_PACKAGE_NAME = "com.luna.chat"
@@ -49,7 +71,9 @@ class AppIntegrityChecker @Inject constructor(
                 return false
             }
             
-            // Check if any signature matches the expected hash
+            // Check if any signature matches the expected hash.
+            // If EXPECTED_SIGNATURE_HASH is empty, treat as unset and force failure so policy handles it.
+            if (EXPECTED_SIGNATURE_HASH.isBlank()) return false
             return signatures.any { signature ->
                 val signatureHash = getSignatureHash(signature)
                 signatureHash == EXPECTED_SIGNATURE_HASH

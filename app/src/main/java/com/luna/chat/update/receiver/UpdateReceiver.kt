@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.luna.chat.update.manager.UpdateManager
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -12,7 +14,11 @@ import kotlinx.coroutines.launch
  * BroadcastReceiver that listens for update notifications.
  * This receiver is triggered when an update is available and initiates the update process.
  */
+@AndroidEntryPoint
 class UpdateReceiver : BroadcastReceiver() {
+
+    @Inject lateinit var updateManager: UpdateManager
+
     companion object {
         /**
          * Intent action for update availability
@@ -29,9 +35,9 @@ class UpdateReceiver : BroadcastReceiver() {
         if (intent.action == ACTION_UPDATE_AVAILABLE) {
             val updatePath = intent.getStringExtra(EXTRA_UPDATE_PATH)
             if (updatePath != null) {
-                // Launch a coroutine to process the update
+                // Launch a coroutine to process the update via injected manager
                 CoroutineScope(Dispatchers.IO).launch {
-                    UpdateManager.getInstance(context).processUpdate(updatePath)
+                    updateManager.processUpdate(updatePath)
                 }
             }
         }

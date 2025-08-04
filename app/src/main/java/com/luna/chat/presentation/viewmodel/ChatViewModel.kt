@@ -8,6 +8,7 @@ import com.luna.chat.domain.entity.MessageStatus
 import com.luna.chat.domain.usecase.SendMessageUseCase
 import com.luna.chat.domain.usecase.ChatHistoryUseCase
 import com.luna.chat.domain.usecase.ContentFilterException
+import com.luna.chat.domain.usecase.ProcessImageUseCase
 import com.luna.chat.data.repository.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -18,7 +19,8 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     private val sendMessageUseCase: SendMessageUseCase,
     private val chatHistoryUseCase: ChatHistoryUseCase,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val processImageUseCase: ProcessImageUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -90,6 +92,15 @@ class ChatViewModel @Inject constructor(
     }
 
     /**
+     * Phase 2b helper: route a vision summary through the normal send path.
+     * This preserves filtering, logging, auth, and model pinning.
+     */
+    fun generateReplyFromVisionSummary(summary: String) {
+        val prompt = "Using the following summary of an image, respond kindly and helpfully for a child.\n\nImage summary: $summary"
+        sendMessage(prompt)
+    }
+
+    /**
      * Start a new chat session
      */
     fun startNewChat() {
@@ -103,12 +114,12 @@ class ChatViewModel @Inject constructor(
                 
                 // Create new session
                 _currentSession.value = ChatSession.create()
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
                         error = null,
                         isFirstMessage = true,
                         showWelcomeCard = true
-                    ) 
+                    )
                 }
             } catch (exception: Exception) {
                 showError("Failed to start new chat. Please try again! 🔄")
@@ -124,12 +135,12 @@ class ChatViewModel @Inject constructor(
             try {
                 chatHistoryUseCase.clearChatHistory()
                 _currentSession.value = ChatSession.create()
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
                         error = null,
                         isFirstMessage = true,
                         showWelcomeCard = true
-                    ) 
+                    )
                 }
             } catch (exception: Exception) {
                 showError("Failed to clear chat history. Please try again! 🗑️")
@@ -197,7 +208,7 @@ class ChatViewModel @Inject constructor(
         return when {
             messageCount == 0 -> listOf(
                 "Help me with math homework",
-                "Tell me about space and planets", 
+                "Tell me about space and planets",
                 "Help me write a story",
                 "Let's play a word game",
                 "Give me a fun drawing idea"
@@ -242,11 +253,11 @@ class ChatViewModel @Inject constructor(
                             // Recreate session with loaded messages
                             val session = ChatSession.create().copy(messages = messages)
                             _currentSession.value = session
-                            _uiState.update { 
+                            _uiState.update {
                                 it.copy(
                                     isFirstMessage = false,
                                     showWelcomeCard = false
-                                ) 
+                                )
                             }
                         } else {
                             _uiState.update { it.copy(showWelcomeCard = true) }
@@ -262,15 +273,15 @@ class ChatViewModel @Inject constructor(
     private fun observeUserPreferences() {
         viewModelScope.launch {
             userPreferencesRepository.userPreferencesFlow
-                .catch { 
+                .catch {
                     // Continue with defaults if preferences loading fails
                 }
                 .collect { preferences ->
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             isFirstTimeUser = preferences.firstTimeUser,
                             contentFilterEnabled = preferences.contentFilterEnabled
-                        ) 
+                        )
                     }
                 }
         }
@@ -320,13 +331,40 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Append an assistant message (used for child-friendly fallbacks or analysis summaries).
+     * Keeps the same mutation pattern as SendMessageUseCase responses.
+     */
+    fun appendAssistantMessage(content: String) {
+        val message = ChatMessage.create(
+            content = content,
+            isFromUser = false,
+            status = MessageStatus.DELIVERED
+        )
+        addMessageToSession(message)
+        _uiState.update { it.copy(isAiThinking = false, isLoading = false) }
+    }
+
+    /**
+     * Process an image and return a safe, child-friendly result string.
+     * Does not log or persist image bytes. In-memory only.
+     */
+    suspend fun processImage(imageBytes: ByteArray, mimeType: String): String? {
+        return try {
+            val result = processImageUseCase(imageBytes, mimeType, userPrompt = null)
+            result.getOrNull()
+        } catch (e: Exception) {
+            "Vision analysis unavailable right now."
+        }
+    }
+
     private fun showError(message: String) {
-        _uiState.update { 
+        _uiState.update {
             it.copy(
                 error = message,
                 isLoading = false,
                 isAiThinking = false
-            ) 
+            )
         }
     }
 }

@@ -47,7 +47,7 @@ class ChatRepositoryImplTest {
     fun `sendMessage should return success when API call succeeds`() = runTest {
         // Given
         val testMessage = "Hello, AI!"
-        val testApiKey = "gsk_test123456789"
+        val testApiKey = "test_openrouter_key"
         val expectedResponse = "Hello! How can I help you today?"
 
         val mockResponse = GroqChatResponse(
@@ -138,7 +138,7 @@ class ChatRepositoryImplTest {
     fun `sendMessage should handle API errors gracefully`() = runTest {
         // Given
         val testMessage = "Hello, AI!"
-        val testApiKey = "gsk_test123456789"
+        val testApiKey = "test_openrouter_key"
 
         // Mock API key provider
         whenever(apiKeyProvider.getApiKey()).thenReturn(testApiKey)
@@ -177,7 +177,7 @@ class ChatRepositoryImplTest {
     fun `sendMessage should include conversation history in API request`() = runTest {
         // Given
         val testMessage = "What's 2 + 2?"
-        val testApiKey = "gsk_test123456789"
+        val testApiKey = "test_openrouter_key"
 
         val conversationHistory = listOf(
             ChatMessageEntity(
@@ -315,7 +315,7 @@ class ChatRepositoryImplTest {
     @Test
     fun `isApiConfigured should return true when API key is valid`() = runTest {
         // Given
-        val validApiKey = "gsk_1234567890abcdef1234567890"
+        val validApiKey = "some_openrouter_key"
         whenever(apiKeyProvider.getApiKey()).thenReturn(validApiKey)
 
         // When
@@ -328,7 +328,7 @@ class ChatRepositoryImplTest {
     @Test
     fun `isApiConfigured should return false when API key is invalid`() = runTest {
         // Given
-        val invalidApiKey = "invalid-key"
+        val invalidApiKey = ""
         whenever(apiKeyProvider.getApiKey()).thenReturn(invalidApiKey)
 
         // When
@@ -341,7 +341,7 @@ class ChatRepositoryImplTest {
     @Test
     fun `testApiConnection should return success when API responds`() = runTest {
         // Given
-        val testApiKey = "gsk_test123456789"
+        val testApiKey = "test_openrouter_key"
         val mockResponse = GroqChatResponse(
             choices = listOf(
                 GroqChoice(

@@ -28,6 +28,53 @@ android {
         }
     }
 
+    // Prevent ASM from instrumenting problematic receiver classes
+    testOptions {
+        unitTests.all {
+            // Preferred path: blacklist specific classes from ASM transform for unit tests
+            systemProperty "androidx.test.asm.blacklist", "com/luna/chat/update/receiver/UpdateReceiver.class,com/luna/chat/update/receiver/Hilt_UpdateReceiver.class"
+            // Also pass as JVM arg for older transformers
+            jvmArgs "-Dandroidx.test.asm.blacklist=com/luna/chat/update/receiver/UpdateReceiver.class,com/luna/chat/update/receiver/Hilt_UpdateReceiver.class"
+        }
+    }
+
+    // Keep packagingOptions as-is for META-INF excludes (no changes needed)
+
+    // Remove invalid transformClassesWith usage and only use supported excludes API for AGP 8.x
+    androidComponents {
+        onVariants(selector().withBuildType("debug")) { variant ->
+            variant.instrumentation.excludes.addAll([
+                "com/luna/chat/update/receiver/UpdateReceiver",
+                "com/luna/chat/update/receiver/Hilt_UpdateReceiver"
+            ])
+        }
+    }
+
+    // Exclude receiver classes from unit test classpath inputs (testDebug only)
+    // This avoids ASM seeing these classes during unit tests without impacting production APK.
+    sourceSets {
+        testDebug {
+            java {
+                // Exclude compiled receiver classes from being on the unit test runtime/compile path
+                exclude 'com/luna/chat/update/receiver/**'
+            }
+            resources {
+                exclude 'com/luna/chat/update/receiver/**'
+            }
+        }
+    }
+
+    // Remove previous incorrect androidComponents transform attempt and use official exclude API
+    androidComponents {
+        onVariants(selector().withBuildType("debug")) { variant ->
+            variant.instrumentation.excludes.addAll([
+                "com/luna/chat/update/receiver/UpdateReceiver",
+                "com/luna/chat/update/receiver/Hilt_UpdateReceiver"
+            ])
+        }
+    }
+ 
+    // Ensure Groovy DSL uses assignment syntax; and configure toolchains to Java 17
     buildTypes {
         release {
             minifyEnabled = false
@@ -36,12 +83,13 @@ android {
     }
     
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        // Use Java 17 toolchain as recommended by Android
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
         freeCompilerArgs += [
             "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
             "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi"
@@ -62,6 +110,8 @@ android {
         }
     }
 }
+
+/* Duplicate android block removed; consolidated into single android {} above */
 
 dependencies {
     // Core Android

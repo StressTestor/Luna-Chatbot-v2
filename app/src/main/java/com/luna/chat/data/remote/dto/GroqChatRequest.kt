@@ -41,7 +41,7 @@ data class GroqChatRequest(
     }
     
     companion object {
-        const val DEFAULT_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+        const val DEFAULT_MODEL = "deepseek/deepseek-chat-v3-0324:free"
         const val DEFAULT_TEMPERATURE = 0.7
         const val DEFAULT_MAX_TOKENS = 1000
         const val MAX_ALLOWED_TOKENS = 4000

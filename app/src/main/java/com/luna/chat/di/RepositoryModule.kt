@@ -3,6 +3,7 @@ package com.luna.chat.di
 import android.content.Context
 import com.luna.chat.data.repository.*
 import com.luna.chat.domain.repository.ChatRepository
+import com.luna.chat.domain.repository.VisionRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -29,6 +30,13 @@ abstract class RepositoryModule {
     abstract fun bindApiKeyProvider(
         secureApiKeyProvider: SecureApiKeyProvider
     ): ApiKeyProvider
+
+    // Bind VisionRepository to VisionRepositoryImpl
+    @Binds
+    @Singleton
+    abstract fun bindVisionRepository(
+        impl: VisionRepositoryImpl
+    ): VisionRepository
     
     companion object {
         @Provides

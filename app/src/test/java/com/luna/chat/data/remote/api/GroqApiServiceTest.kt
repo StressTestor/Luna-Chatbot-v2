@@ -99,7 +99,8 @@ class GroqApiServiceTest {
         // Verify request
         val recordedRequest = mockWebServer.takeRequest()
         assertEquals("POST", recordedRequest.method)
-        assertEquals("/openai/v1/chat/completions", recordedRequest.path)
+        // OpenRouter path under mock server base is /v1/chat/completions
+        assertEquals("/v1/chat/completions", recordedRequest.path)
         assertEquals("Bearer test-api-key", recordedRequest.getHeader("Authorization"))
     }
 
@@ -235,27 +236,20 @@ class GroqApiServiceTest {
     @Test
     fun `formatAuthHeader should format API key correctly`() {
         // Given
-        val apiKey = "gsk_test123456789"
-
+        val apiKey = "test_openrouter_key_value"
+        
         // When
         val authHeader = GroqApiService.formatAuthHeader(apiKey)
-
+        
         // Then
-        assertEquals("Bearer gsk_test123456789", authHeader)
+        assertEquals("Bearer test_openrouter_key_value", authHeader)
     }
 
     @Test
     fun `isValidApiKeyFormat should validate API key format`() {
-        // Valid API keys
-        assertTrue(GroqApiService.isValidApiKeyFormat("gsk_1234567890abcdef1234567890"))
-        assertTrue(GroqApiService.isValidApiKeyFormat("gsk_abcdefghijklmnopqrstuvwxyz"))
-
-        // Invalid API keys
+        // Accept non-blank tokens for OpenRouter (format varies)
+        assertTrue(GroqApiService.isValidApiKeyFormat("some_openrouter_key"))
         assertFalse(GroqApiService.isValidApiKeyFormat(""))
-        assertFalse(GroqApiService.isValidApiKeyFormat("invalid-key"))
-        assertFalse(GroqApiService.isValidApiKeyFormat("sk_1234567890")) // Wrong prefix
-        assertFalse(GroqApiService.isValidApiKeyFormat("gsk_short")) // Too short
-        assertFalse(GroqApiService.isValidApiKeyFormat("gsk_")) // Just prefix
     }
 
     @Test
