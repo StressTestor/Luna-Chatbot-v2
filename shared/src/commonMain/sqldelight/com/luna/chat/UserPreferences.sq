@@ -1,0 +1,59 @@
+CREATE TABLE user_preferences (
+    id INTEGER PRIMARY KEY NOT NULL DEFAULT 1,
+    selected_theme TEXT NOT NULL DEFAULT 'rainbow',
+    parental_controls_enabled INTEGER NOT NULL DEFAULT 1,
+    api_key_configured INTEGER NOT NULL DEFAULT 0,
+    first_time_user INTEGER NOT NULL DEFAULT 1,
+    auto_clear_history_days INTEGER NOT NULL DEFAULT 30,
+    content_filter_enabled INTEGER NOT NULL DEFAULT 1,
+    voice_input_enabled INTEGER NOT NULL DEFAULT 1,
+    updated_at INTEGER NOT NULL DEFAULT 0,
+    app_version TEXT NOT NULL DEFAULT '',
+    total_messages_sent INTEGER NOT NULL DEFAULT 0
+);
+
+getUserPreferences:
+SELECT * FROM user_preferences WHERE id = 1;
+
+insertDefaultPreferences:
+INSERT OR IGNORE INTO user_preferences (id) VALUES (1);
+
+updateTheme:
+UPDATE user_preferences SET selected_theme = ?, updated_at = ? WHERE id = 1;
+
+updateParentalControls:
+UPDATE user_preferences SET parental_controls_enabled = ?, updated_at = ? WHERE id = 1;
+
+updateApiKeyConfigured:
+UPDATE user_preferences SET api_key_configured = ?, updated_at = ? WHERE id = 1;
+
+markNotFirstTimeUser:
+UPDATE user_preferences SET first_time_user = 0, updated_at = ? WHERE id = 1;
+
+updateContentFilter:
+UPDATE user_preferences SET content_filter_enabled = ?, updated_at = ? WHERE id = 1;
+
+updateVoiceInput:
+UPDATE user_preferences SET voice_input_enabled = ?, updated_at = ? WHERE id = 1;
+
+updateAutoClearDays:
+UPDATE user_preferences SET auto_clear_history_days = ?, updated_at = ? WHERE id = 1;
+
+updateAppVersion:
+UPDATE user_preferences SET app_version = ?, updated_at = ? WHERE id = 1;
+
+incrementMessagesSent:
+UPDATE user_preferences SET total_messages_sent = total_messages_sent + 1, updated_at = ? WHERE id = 1;
+
+resetToDefaults:
+UPDATE user_preferences SET
+    selected_theme = 'rainbow',
+    parental_controls_enabled = 1,
+    api_key_configured = 0,
+    first_time_user = 1,
+    auto_clear_history_days = 30,
+    content_filter_enabled = 1,
+    voice_input_enabled = 1,
+    total_messages_sent = 0,
+    updated_at = ?
+WHERE id = 1;

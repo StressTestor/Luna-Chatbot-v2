@@ -1,0 +1,57 @@
+CREATE TABLE chat_messages (
+    id TEXT PRIMARY KEY NOT NULL,
+    content TEXT NOT NULL,
+    is_from_user INTEGER NOT NULL DEFAULT 0,
+    timestamp INTEGER NOT NULL,
+    session_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'SENT'
+);
+
+CREATE INDEX idx_session_id ON chat_messages(session_id);
+CREATE INDEX idx_timestamp ON chat_messages(timestamp);
+CREATE INDEX idx_is_from_user ON chat_messages(is_from_user);
+
+-- Queries
+
+getAllMessages:
+SELECT * FROM chat_messages ORDER BY timestamp ASC;
+
+getMessagesBySession:
+SELECT * FROM chat_messages WHERE session_id = ? ORDER BY timestamp ASC;
+
+getMessageById:
+SELECT * FROM chat_messages WHERE id = ?;
+
+getMessagesByType:
+SELECT * FROM chat_messages WHERE is_from_user = ? ORDER BY timestamp DESC;
+
+getRecentMessages:
+SELECT * FROM chat_messages ORDER BY timestamp DESC LIMIT ?;
+
+getAllSessionIds:
+SELECT DISTINCT session_id FROM chat_messages ORDER BY timestamp DESC;
+
+getMessageCountBySession:
+SELECT COUNT(*) FROM chat_messages WHERE session_id = ?;
+
+getTotalMessageCount:
+SELECT COUNT(*) FROM chat_messages;
+
+insertMessage:
+INSERT OR REPLACE INTO chat_messages (id, content, is_from_user, timestamp, session_id, status)
+VALUES (?, ?, ?, ?, ?, ?);
+
+updateMessageStatus:
+UPDATE chat_messages SET status = ? WHERE id = ?;
+
+deleteMessage:
+DELETE FROM chat_messages WHERE id = ?;
+
+clearAllMessages:
+DELETE FROM chat_messages;
+
+clearSessionMessages:
+DELETE FROM chat_messages WHERE session_id = ?;
+
+deleteMessagesOlderThan:
+DELETE FROM chat_messages WHERE timestamp < ?;

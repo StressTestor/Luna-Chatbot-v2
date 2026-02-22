@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "xcodebuildmcp": {
+      "command": "/Volumes/onn. Drive/mcp-servers/xcodebuildmcp/node_modules/.bin/xcodebuildmcp",
+      "args": ["mcp"],
+      "disabled": false
+    },
+    "gradle-mcp-server": {
+      "command": "/opt/homebrew/Cellar/openjdk@17/17.0.17/libexec/openjdk.jdk/Contents/Home/bin/java",
+      "args": [
+        "-jar",
+        "/Volumes/onn. Drive/mcp-servers/gradle-mcp-server/gradle-mcp-server-all.jar"
+      ],
+      "disabled": false
+    }
+  }
+}
