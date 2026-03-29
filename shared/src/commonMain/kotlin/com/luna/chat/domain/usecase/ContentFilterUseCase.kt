@@ -128,7 +128,6 @@ class ContentFilterUseCase constructor() {
     }
 
     companion object {
-        private const val MAX_RESPONSE_LENGTH = 4000
         private const val MAX_INPUT_LENGTH = 2000
     }
 }

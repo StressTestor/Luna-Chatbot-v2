@@ -20,7 +20,7 @@ fun categorizeModel(id: String, inputModalities: List<String>): ModelCategory {
     val hasImageInput = "image" in inputModalities
 
     return when {
-        hasImageInput || "vision" in lower || "vl" in lower -> ModelCategory.VISION
+        hasImageInput || "vision" in lower || "-vl" in lower || "/vl-" in lower -> ModelCategory.VISION
         "coder" in lower || "code" in lower -> ModelCategory.CODE
         "reasoning" in lower || "think" in lower ||
             lower.contains("-o1") || lower.contains("/o1") ||

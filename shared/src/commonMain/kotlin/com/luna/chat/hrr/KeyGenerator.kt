@@ -50,7 +50,7 @@ class KeyGenerator(
     /** Sentence key at index [s]. Uses the DFT basis at a high offset to avoid collision with role keys. */
     fun sentenceKey(s: Int): ComplexVector {
         // Offset by a large prime to separate sentence key space from role key space
-        return roleKey(s + 7919)
+        return roleKey(s + HrrDefaults.SENTENCE_KEY_OFFSET)
     }
 
     /**

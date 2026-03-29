@@ -45,10 +45,10 @@ class NuggetExtractionUseCase(
         val apiKey = apiKeyProvider.getApiKey() ?: return
         val selectedModel = userPreferencesRepository.userPreferencesFlow.first().selectedModel
 
-        val conversationText = messages.joinToString("\n") { msg ->
+        val conversationText = messages.takeLast(10).joinToString("\n") { msg ->
             val role = if (msg.isFromUser) "User" else "Luna"
-            "$role: ${msg.content}"
-        }
+            "$role: ${msg.content.take(500)}"
+        }.take(6000) // stay within MAX_CONTENT_LENGTH with room for the prompt
 
         val extractionPrompt = """Analyze this conversation and extract persistent facts about the user.
 Return a JSON array of objects with "topic", "key", and "value" fields.
@@ -98,14 +98,14 @@ Return ONLY the JSON array, no other text."""
 
             for (fact in facts) {
                 val topic = fact.topic.lowercase().trim()
-                val key = fact.key.trim()
-                val value = fact.value.trim()
+                val key = fact.key.trim().take(50).replace("\n", " ")
+                val value = fact.value.trim().take(100).replace("\n", " ")
                 if (key.isNotEmpty() && value.isNotEmpty() && topic in NuggetShelf.Topics.ALL) {
                     nuggetShelf.remember(topic, key, value)
                 }
             }
-        } catch (_: Exception) {
-            // Extraction is best-effort. Silent failure.
+        } catch (e: Exception) {
+            println("Luna:NuggetExtraction: ${e::class.simpleName}: ${e.message}")
         }
     }
 }

@@ -69,9 +69,11 @@ class ChatRepositoryImpl(
             val promotedFacts = nuggetShelf.getPromotedFacts()
             val systemMessage = if (promotedFacts.isNotEmpty()) {
                 val factsBlock = promotedFacts.joinToString("\n") { (_, fact) ->
-                    "- ${fact.key}: ${fact.value}"
+                    val safeKey = fact.key.take(50).replace("\n", " ").trim()
+                    val safeVal = fact.value.take(100).replace("\n", " ").trim()
+                    "- $safeKey: $safeVal"
                 }
-                "$SYSTEM_MESSAGE\n\nThings you know about the user:\n$factsBlock"
+                "$SYSTEM_MESSAGE\n\n<user_facts>\n$factsBlock\n</user_facts>"
             } else {
                 SYSTEM_MESSAGE
             }
