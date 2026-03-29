@@ -7,6 +7,7 @@ import com.luna.chat.domain.entity.ChatMessage
 import com.luna.chat.domain.entity.MessageStatus
 import com.luna.chat.domain.repository.ChatRepository
 import com.luna.chat.domain.repository.UserPreferencesRepository
+import com.luna.chat.hrr.NuggetShelf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -20,6 +21,7 @@ class ChatRepositoryImpl(
     private val apiClient: LunaApiClient,
     private val apiKeyProvider: ApiKeyProvider,
     private val userPreferencesRepository: UserPreferencesRepository,
+    private val nuggetShelf: NuggetShelf,
 ) : ChatRepository {
 
     companion object {
@@ -63,8 +65,19 @@ class ChatRepositoryImpl(
                     else GroqMessage.createAssistantMessage(msg.content)
                 }
 
+            // Inject promoted nuggets (facts recalled 3+ times) into system prompt
+            val promotedFacts = nuggetShelf.getPromotedFacts()
+            val systemMessage = if (promotedFacts.isNotEmpty()) {
+                val factsBlock = promotedFacts.joinToString("\n") { (_, fact) ->
+                    "- ${fact.key}: ${fact.value}"
+                }
+                "$SYSTEM_MESSAGE\n\nThings you know about the user:\n$factsBlock"
+            } else {
+                SYSTEM_MESSAGE
+            }
+
             val messages = buildList {
-                add(GroqMessage.createSystemMessage(SYSTEM_MESSAGE))
+                add(GroqMessage.createSystemMessage(systemMessage))
                 addAll(conversationHistory)
                 add(GroqMessage.createUserMessage(message.trim()))
             }

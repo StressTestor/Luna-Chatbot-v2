@@ -16,9 +16,11 @@ import com.luna.chat.domain.repository.UserPreferencesRepository
 import com.luna.chat.domain.repository.VisionRepository
 import com.luna.chat.domain.usecase.ChatHistoryUseCase
 import com.luna.chat.domain.usecase.ContentFilterUseCase
+import com.luna.chat.domain.usecase.NuggetExtractionUseCase
 import com.luna.chat.domain.usecase.ProcessImageUseCase
 import com.luna.chat.domain.usecase.SendMessageUseCase
 import com.luna.chat.domain.usecase.ThemeManagementUseCase
+import com.luna.chat.hrr.NuggetShelf
 import com.luna.chat.presentation.viewmodel.ChatViewModel
 import com.luna.chat.presentation.viewmodel.SettingsViewModel
 import org.koin.core.module.dsl.singleOf
@@ -38,9 +40,13 @@ val commonModule = module {
     singleOf(::UserPreferencesRepositoryImpl) bind UserPreferencesRepository::class
     singleOf(::ModelRepositoryImpl) bind ModelRepository::class
 
+    // HRR Memory (Layer 3)
+    single { NuggetShelf(get()) }
+
     // Use cases
     singleOf(::ContentFilterUseCase)
     singleOf(::SendMessageUseCase)
+    singleOf(::NuggetExtractionUseCase)
     singleOf(::ChatHistoryUseCase)
     singleOf(::ThemeManagementUseCase)
     singleOf(::ProcessImageUseCase)

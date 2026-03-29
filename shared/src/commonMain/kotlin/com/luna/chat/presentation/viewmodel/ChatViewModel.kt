@@ -9,6 +9,7 @@ import com.luna.chat.domain.entity.MessageStatus
 import com.luna.chat.domain.entity.ModelCategory
 import com.luna.chat.domain.repository.ModelRepository
 import com.luna.chat.domain.repository.UserPreferencesRepository
+import com.luna.chat.domain.usecase.NuggetExtractionUseCase
 import com.luna.chat.domain.usecase.SendMessageUseCase
 import com.luna.chat.domain.usecase.ChatHistoryUseCase
 import com.luna.chat.domain.usecase.ContentFilterException
@@ -22,6 +23,7 @@ class ChatViewModel(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val processImageUseCase: ProcessImageUseCase,
     private val modelRepository: ModelRepository,
+    private val nuggetExtractionUseCase: NuggetExtractionUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -118,6 +120,8 @@ class ChatViewModel(
                 val currentMessages = _currentSession.value.messages
                 if (currentMessages.isNotEmpty()) {
                     chatHistoryUseCase.saveMessages(currentMessages)
+                    // Extract persistent facts from the ending conversation (async, best-effort)
+                    launch { nuggetExtractionUseCase.extractAndStore(currentMessages) }
                 }
                 _currentSession.value = ChatSession.create()
                 _uiState.update { it.copy(error = null, isFirstMessage = true, showWelcomeCard = true) }
