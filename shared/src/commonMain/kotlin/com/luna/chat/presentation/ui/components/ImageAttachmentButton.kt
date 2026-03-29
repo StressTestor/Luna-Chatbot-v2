@@ -12,6 +12,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import com.luna.chat.permissions.rememberVisionPermissionHandler
 
 @Composable
 fun ImageAttachmentButton(
@@ -19,8 +20,12 @@ fun ImageAttachmentButton(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
+    val visionHandler = rememberVisionPermissionHandler(
+        onPermissionsGranted = onClick,
+    )
+
     IconButton(
-        onClick = onClick,
+        onClick = visionHandler.onClick,
         enabled = enabled,
         modifier = modifier
             .testTag("image_attachment_button")

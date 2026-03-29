@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import com.luna.chat.permissions.rememberMicPermissionHandler
 
 @Composable
 fun MessageInput(
@@ -38,6 +39,9 @@ fun MessageInput(
     modifier: Modifier = Modifier
 ) {
     var isListening by remember { mutableStateOf(false) }
+    val micHandler = rememberMicPermissionHandler(
+        onPermissionGranted = { isListening = true; onVoiceInput() },
+    )
 
     Card(
         modifier = modifier.fillMaxWidth().padding(16.dp).testTag("message_input_card"),
@@ -51,9 +55,13 @@ fun MessageInput(
         ) {
             VoiceInputButton(
                 onClick = {
-                    if (isListening) { isListening = false } else { isListening = true; onVoiceInput() }
+                    if (isListening) {
+                        isListening = false
+                    } else {
+                        micHandler.onClick()
+                    }
                 },
-                isEnabled = isEnabled && !isLoading,
+                isEnabled = isEnabled && !isLoading && micHandler.isAvailable,
                 isListening = isListening,
                 modifier = Modifier.testTag("voice_input_button")
             )

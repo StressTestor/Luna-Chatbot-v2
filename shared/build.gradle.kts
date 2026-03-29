@@ -73,6 +73,11 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.androidx.security.crypto)
             implementation(libs.sqlcipher.android)
+
+            // Permission helpers (activity-compose for rememberLauncherForActivityResult;
+            // core-ktx for ContextCompat / ActivityCompat)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.core.ktx)
         }
 
         iosMain.dependencies {
