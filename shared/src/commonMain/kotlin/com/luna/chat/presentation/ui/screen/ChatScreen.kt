@@ -12,9 +12,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +40,7 @@ import com.luna.chat.presentation.accessibility.AccessibilityUtils
 import com.luna.chat.presentation.accessibility.ChildFriendlyDescriptions
 import com.luna.chat.presentation.performance.PerformanceUtils
 import com.luna.chat.presentation.performance.shouldRenderItem
+import com.luna.chat.presentation.ui.components.ConversationDrawer
 import com.luna.chat.presentation.ui.components.ImageAttachmentButton
 import com.luna.chat.presentation.ui.components.ImagePreviewDialog
 import com.luna.chat.presentation.ui.components.MessageBubble
@@ -60,9 +65,12 @@ fun ChatScreen(
     val currentSession by viewModel.currentSession.collectAsState()
     val availableModels by viewModel.availableModels.collectAsState()
     val modelsLoading by viewModel.modelsLoading.collectAsState()
+    val conversations by viewModel.conversations.collectAsState()
+    val currentConversationId by viewModel.currentConversationId.collectAsState()
 
     var messageText by remember { mutableStateOf("") }
     var showModelSheet by remember { mutableStateOf(false) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
@@ -93,14 +101,36 @@ fun ChatScreen(
         )
     }
 
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.fillMaxWidth(0.75f),
+            ) {
+                ConversationDrawer(
+                    conversations = conversations,
+                    currentConversationId = currentConversationId,
+                    onNewChat = {
+                        viewModel.startNewChat(); messageText = ""
+                        coroutineScope.launch { drawerState.close() }
+                    },
+                    onSelectConversation = { id ->
+                        viewModel.switchConversation(id)
+                        coroutineScope.launch { drawerState.close() }
+                    },
+                    onDeleteConversation = { viewModel.deleteConversation(it) },
+                )
+            }
+        },
+    ) {
     Scaffold(
         modifier = modifier.testTag("chat_screen"),
         topBar = {
             ChatTopBar(
                 selectedModel = uiState.selectedModel,
                 onModelClick = { viewModel.loadModels(); showModelSheet = true },
+                onMenuClick = { coroutineScope.launch { drawerState.open() } },
                 onSettingsClick = onSettingsClick,
-                onNewChatClick = { viewModel.startNewChat(); messageText = "" },
             )
         },
         bottomBar = {
@@ -168,6 +198,7 @@ fun ChatScreen(
             )
         }
     }
+    } // ModalNavigationDrawer
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -175,8 +206,8 @@ fun ChatScreen(
 private fun ChatTopBar(
     selectedModel: String,
     onModelClick: () -> Unit,
+    onMenuClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    onNewChatClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shortModelName = selectedModel
@@ -184,6 +215,15 @@ private fun ChatTopBar(
         .substringAfter("/")
 
     TopAppBar(
+        navigationIcon = {
+            IconButton(onClick = onMenuClick) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Open conversations",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        },
         title = {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -202,11 +242,6 @@ private fun ChatTopBar(
             }
         },
         actions = {
-            IconButton(
-                onClick = onNewChatClick,
-                modifier = Modifier.size(AccessibilityUtils.ChildFriendlyTouchTargetSize).testTag("new_chat_button")
-                    .semantics { contentDescription = ChildFriendlyDescriptions.newChatButton(); role = Role.Button }
-            ) { Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) }
             IconButton(
                 onClick = onSettingsClick,
                 modifier = Modifier.size(AccessibilityUtils.ChildFriendlyTouchTargetSize).testTag("settings_button")

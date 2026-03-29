@@ -3,16 +3,16 @@ package com.luna.chat.data.repository
 import com.luna.chat.data.remote.api.LunaApiClient
 import com.luna.chat.data.remote.dto.GroqChatRequest
 import com.luna.chat.data.remote.dto.GroqMessage
+import com.luna.chat.db.LunaDatabase
 import com.luna.chat.domain.entity.ChatMessage
 import com.luna.chat.domain.entity.MessageStatus
 import com.luna.chat.domain.repository.ChatRepository
+import com.luna.chat.domain.repository.ConversationRepository
 import com.luna.chat.domain.repository.UserPreferencesRepository
 import com.luna.chat.hrr.NuggetShelf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -22,6 +22,8 @@ class ChatRepositoryImpl(
     private val apiKeyProvider: ApiKeyProvider,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val nuggetShelf: NuggetShelf,
+    private val database: LunaDatabase,
+    private val conversationRepository: ConversationRepository,
 ) : ChatRepository {
 
     companion object {
@@ -39,11 +41,8 @@ class ChatRepositoryImpl(
             |Never generate explicit sexual content or detailed violence.""".trimMargin()
     }
 
-    // In-memory message store (will be backed by SQLDelight in Phase 5)
-    private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
-
     @OptIn(ExperimentalUuidApi::class)
-    override suspend fun sendMessage(message: String): Flow<Result<String>> = flow {
+    override suspend fun sendMessage(message: String, conversationId: String): Flow<Result<String>> = flow {
         try {
             if (message.isBlank()) {
                 emit(Result.failure(IllegalArgumentException("Message cannot be empty")))
@@ -51,21 +50,20 @@ class ChatRepositoryImpl(
             }
 
             val apiKey = apiKeyProvider.getApiKey()
-
             if (apiKey.isNullOrBlank()) {
                 emit(Result.failure(IllegalStateException("API key not configured")))
                 return@flow
             }
 
-            // Build conversation with history
-            val conversationHistory = _messages.value
+            // Load conversation history from SQLite for API context
+            val history = getMessagesForConversation(conversationId)
                 .takeLast(MAX_CONVERSATION_HISTORY)
                 .map { msg ->
                     if (msg.isFromUser) GroqMessage.createUserMessage(msg.content)
                     else GroqMessage.createAssistantMessage(msg.content)
                 }
 
-            // Inject promoted nuggets (facts recalled 3+ times) into system prompt
+            // Inject promoted nuggets into system prompt
             val promotedFacts = nuggetShelf.getPromotedFacts()
             val systemMessage = if (promotedFacts.isNotEmpty()) {
                 val factsBlock = promotedFacts.joinToString("\n") { (_, fact) ->
@@ -80,16 +78,14 @@ class ChatRepositoryImpl(
 
             val messages = buildList {
                 add(GroqMessage.createSystemMessage(systemMessage))
-                addAll(conversationHistory)
+                addAll(history)
                 add(GroqMessage.createUserMessage(message.trim()))
             }
 
             val selectedModel = userPreferencesRepository.userPreferencesFlow.first().selectedModel
             val request = GroqChatRequest.create(messages = messages, model = selectedModel, maxTokens = 1000)
 
-
             val response = apiClient.sendChatMessage(apiKey, request)
-
             val assistantMessage = response.getAssistantMessage()
 
             if (assistantMessage.isNullOrBlank()) {
@@ -97,30 +93,53 @@ class ChatRepositoryImpl(
                 return@flow
             }
 
-            // Store AI message in memory
+            // Persist AI message to SQLite
             val aiMessage = ChatMessage(
                 id = Uuid.random().toString(),
                 content = assistantMessage,
                 isFromUser = false,
                 timestamp = Clock.System.now().toEpochMilliseconds(),
-                status = MessageStatus.DELIVERED
+                status = MessageStatus.DELIVERED,
             )
-            _messages.value = _messages.value + aiMessage
+            persistMessage(aiMessage, conversationId)
+            conversationRepository.touch(conversationId)
 
             emit(Result.success(assistantMessage))
         } catch (e: Exception) {
-
             emit(Result.failure(e))
         }
     }
 
-    override suspend fun getChatHistory(): Flow<List<ChatMessage>> = _messages
-
-    override suspend fun saveChatHistory(messages: List<ChatMessage>) {
-        _messages.value = messages
+    override fun getMessagesForConversation(conversationId: String): List<ChatMessage> {
+        return database.chatMessageQueries.getMessagesBySession(conversationId)
+            .executeAsList()
+            .map { row ->
+                ChatMessage(
+                    id = row.id,
+                    content = row.content,
+                    isFromUser = row.is_from_user != 0L,
+                    timestamp = row.timestamp,
+                    status = MessageStatus.valueOf(row.status),
+                )
+            }
     }
 
-    override suspend fun clearChatHistory() {
-        _messages.value = emptyList()
+    override suspend fun persistMessage(message: ChatMessage, conversationId: String) {
+        database.chatMessageQueries.insertMessage(
+            id = message.id,
+            content = message.content,
+            is_from_user = if (message.isFromUser) 1L else 0L,
+            timestamp = message.timestamp,
+            session_id = conversationId,
+            status = message.status.name,
+        )
+    }
+
+    override suspend fun clearConversationMessages(conversationId: String) {
+        database.chatMessageQueries.clearSessionMessages(conversationId)
+    }
+
+    override suspend fun clearAllMessages() {
+        database.chatMessageQueries.clearAllMessages()
     }
 }

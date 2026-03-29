@@ -4,8 +4,9 @@ import com.luna.chat.domain.entity.ChatMessage
 import kotlinx.coroutines.flow.Flow
 
 interface ChatRepository {
-    suspend fun sendMessage(message: String): Flow<Result<String>>
-    suspend fun getChatHistory(): Flow<List<ChatMessage>>
-    suspend fun saveChatHistory(messages: List<ChatMessage>)
-    suspend fun clearChatHistory()
+    suspend fun sendMessage(message: String, conversationId: String): Flow<Result<String>>
+    fun getMessagesForConversation(conversationId: String): List<ChatMessage>
+    suspend fun persistMessage(message: ChatMessage, conversationId: String)
+    suspend fun clearConversationMessages(conversationId: String)
+    suspend fun clearAllMessages()
 }

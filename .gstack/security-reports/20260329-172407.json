@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "date": "2026-03-29T22:30:00Z",
+  "mode": "daily",
+  "scope": "full",
+  "diff_mode": false,
+  "phases_run": [0,1,2,3,7,8,9,10,11,12,13,14],
+  "findings": [
+    {"id":1,"severity":"CRITICAL","confidence":10,"status":"VERIFIED","phase":2,"category":"Secrets","title":"Live API key baked into BuildConfig","file":"composeApp/build.gradle.kts","line":39},
+    {"id":2,"severity":"HIGH","confidence":9,"status":"VERIFIED","phase":7,"category":"LLM Prompt Injection","title":"Indirect prompt injection via fact extraction","file":"shared/.../NuggetExtractionUseCase.kt","line":99},
+    {"id":3,"severity":"HIGH","confidence":8,"status":"VERIFIED","phase":9,"category":"Input Validation","title":"Content filter bypass via unicode/encoding","file":"shared/.../ContentFilterUseCase.kt","line":10},
+    {"id":4,"severity":"HIGH","confidence":9,"status":"VERIFIED","phase":7,"category":"Information Disclosure","title":"Child PII sent to external API without scrubbing","file":"shared/.../NuggetExtractionUseCase.kt","line":48},
+    {"id":5,"severity":"MEDIUM","confidence":9,"status":"VERIFIED","phase":9,"category":"Authentication","title":"Parent password plaintext, no brute-force protection","file":"shared/.../DefaultParentAuthService.kt","line":11},
+    {"id":6,"severity":"MEDIUM","confidence":10,"status":"VERIFIED","phase":3,"category":"Data Protection","title":"SQLCipher declared but not integrated","file":"shared/.../DatabaseDriverFactory.android.kt","line":10},
+    {"id":7,"severity":"MEDIUM","confidence":8,"status":"VERIFIED","phase":7,"category":"Resource Exhaustion","title":"No rate limiting on LLM API calls","file":"shared/.../ChatRepositoryImpl.kt","line":46}
+  ],
+  "totals": {"critical":1,"high":3,"medium":3,"tentative":0}
+}

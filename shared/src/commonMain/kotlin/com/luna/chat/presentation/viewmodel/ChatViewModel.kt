@@ -4,26 +4,27 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luna.chat.domain.entity.ChatMessage
 import com.luna.chat.domain.entity.ChatSession
+import com.luna.chat.domain.entity.Conversation
 import com.luna.chat.domain.entity.LunaModel
 import com.luna.chat.domain.entity.MessageStatus
 import com.luna.chat.domain.entity.ModelCategory
+import com.luna.chat.domain.repository.ChatRepository
+import com.luna.chat.domain.repository.ConversationRepository
 import com.luna.chat.domain.repository.ModelRepository
 import com.luna.chat.domain.repository.UserPreferencesRepository
 import com.luna.chat.domain.usecase.NuggetExtractionUseCase
 import com.luna.chat.domain.usecase.SendMessageUseCase
-import com.luna.chat.domain.usecase.ChatHistoryUseCase
 import com.luna.chat.domain.usecase.ContentFilterException
-import com.luna.chat.domain.usecase.ProcessImageUseCase
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class ChatViewModel(
     private val sendMessageUseCase: SendMessageUseCase,
-    private val chatHistoryUseCase: ChatHistoryUseCase,
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val processImageUseCase: ProcessImageUseCase,
     private val modelRepository: ModelRepository,
     private val nuggetExtractionUseCase: NuggetExtractionUseCase,
+    private val chatRepository: ChatRepository,
+    private val conversationRepository: ConversationRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -32,6 +33,12 @@ class ChatViewModel(
     private val _currentSession = MutableStateFlow(ChatSession.create())
     val currentSession: StateFlow<ChatSession> = _currentSession.asStateFlow()
 
+    private val _conversations = MutableStateFlow<List<Conversation>>(emptyList())
+    val conversations: StateFlow<List<Conversation>> = _conversations.asStateFlow()
+
+    private val _currentConversationId = MutableStateFlow<String?>(null)
+    val currentConversationId: StateFlow<String?> = _currentConversationId.asStateFlow()
+
     private val _availableModels = MutableStateFlow<Map<ModelCategory, List<LunaModel>>>(emptyMap())
     val availableModels: StateFlow<Map<ModelCategory, List<LunaModel>>> = _availableModels.asStateFlow()
 
@@ -39,31 +46,90 @@ class ChatViewModel(
     val modelsLoading: StateFlow<Boolean> = _modelsLoading.asStateFlow()
 
     init {
-        loadChatHistory()
         observeUserPreferences()
+        observeConversations()
+        loadMostRecentOrNew()
     }
 
-    fun loadModels() {
-        if (_availableModels.value.isNotEmpty() || _modelsLoading.value) return
+    // -- conversation management --
+
+    private fun observeConversations() {
         viewModelScope.launch {
-            _modelsLoading.value = true
-            try {
-                val models = modelRepository.getAvailableModels()
-                _availableModels.value = models.groupBy { it.category }
-                    .toSortedMap(compareBy { it.ordinal })
-            } catch (_: Exception) {
-                // Silently fail — the sheet will show empty state
-            } finally {
-                _modelsLoading.value = false
+            conversationRepository.conversationsFlow.collect { list ->
+                _conversations.value = list
             }
         }
     }
 
-    fun selectModel(model: LunaModel) {
+    private fun loadMostRecentOrNew() {
         viewModelScope.launch {
-            userPreferencesRepository.updateSelectedModel(model.id)
+            val convos = conversationRepository.conversationsFlow.first()
+            if (convos.isNotEmpty()) {
+                loadConversation(convos.first().id)
+            } else {
+                _uiState.update { it.copy(showWelcomeCard = true, isFirstMessage = true) }
+            }
         }
     }
+
+    fun switchConversation(id: String) {
+        viewModelScope.launch {
+            loadConversation(id)
+        }
+    }
+
+    private suspend fun loadConversation(id: String) {
+        val messages = chatRepository.getMessagesForConversation(id)
+        val session = ChatSession.create().copy(messages = messages)
+        _currentSession.value = session
+        _currentConversationId.value = id
+        _uiState.update {
+            it.copy(
+                isFirstMessage = messages.isEmpty(),
+                showWelcomeCard = messages.isEmpty(),
+                error = null,
+            )
+        }
+    }
+
+    fun startNewChat() {
+        viewModelScope.launch {
+            try {
+                // Extract nuggets from the ending conversation
+                val currentMessages = _currentSession.value.messages
+                if (currentMessages.size >= 4) {
+                    launch { nuggetExtractionUseCase.extractAndStore(currentMessages) }
+                }
+
+                // Create new conversation
+                val conversation = conversationRepository.createConversation()
+                _currentSession.value = ChatSession.create()
+                _currentConversationId.value = conversation.id
+                _uiState.update { it.copy(error = null, isFirstMessage = true, showWelcomeCard = true) }
+            } catch (e: Exception) {
+                showError("Failed to start new chat.")
+            }
+        }
+    }
+
+    fun deleteConversation(id: String) {
+        viewModelScope.launch {
+            conversationRepository.deleteConversation(id)
+            // If we deleted the current conversation, start fresh
+            if (_currentConversationId.value == id) {
+                val remaining = conversationRepository.conversationsFlow.first()
+                if (remaining.isNotEmpty()) {
+                    loadConversation(remaining.first().id)
+                } else {
+                    _currentSession.value = ChatSession.create()
+                    _currentConversationId.value = null
+                    _uiState.update { it.copy(showWelcomeCard = true, isFirstMessage = true) }
+                }
+            }
+        }
+    }
+
+    // -- messaging --
 
     fun sendMessage(message: String) {
         if (message.isBlank()) return
@@ -76,29 +142,57 @@ class ChatViewModel(
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true, error = null) }
-                sendMessageUseCase(trimmedMessage)
+
+                // Ensure we have a conversation
+                var convId = _currentConversationId.value
+                if (convId == null) {
+                    val conv = conversationRepository.createConversation(
+                        title = trimmedMessage.take(40),
+                    )
+                    convId = conv.id
+                    _currentConversationId.value = convId
+                }
+
+                // Set conversation title from first message if untitled
+                val conv = conversationRepository.getConversation(convId)
+                if (conv != null && conv.title.isBlank()) {
+                    conversationRepository.updateTitle(convId, trimmedMessage.take(40))
+                }
+
+                // Create and persist user message
+                val userMessage = ChatMessage.create(
+                    content = trimmedMessage,
+                    isFromUser = true,
+                    status = MessageStatus.SENDING,
+                )
+                chatRepository.persistMessage(userMessage, convId)
+                addMessageToSession(userMessage.copy(status = MessageStatus.DELIVERED))
+
+                // Send to API
+                sendMessageUseCase(trimmedMessage, convId)
                     .catch { exception ->
                         handleSendMessageError(exception)
                         _uiState.update { it.copy(isAiThinking = false) }
                     }
                     .collect { result ->
                         result.fold(
-                            onSuccess = { chatMessage ->
-                                addMessageToSession(chatMessage)
-                                if (chatMessage.status == MessageStatus.DELIVERED) {
-                                    chatHistoryUseCase.saveMessage(chatMessage)
-                                    if (chatMessage.isFromUser) {
-                                        userPreferencesRepository.incrementMessagesSent()
-                                    }
-                                    if (!chatMessage.isFromUser) {
-                                        _uiState.update { it.copy(isAiThinking = false) }
-                                    }
+                            onSuccess = { aiResponse ->
+                                val aiMessage = ChatMessage.create(
+                                    content = aiResponse,
+                                    isFromUser = false,
+                                    status = MessageStatus.DELIVERED,
+                                )
+                                chatRepository.persistMessage(aiMessage, convId)
+                                addMessageToSession(aiMessage)
+                                conversationRepository.touch(convId)
+                                if (!aiMessage.isFromUser) {
+                                    userPreferencesRepository.incrementMessagesSent()
                                 }
                             },
                             onFailure = { exception ->
                                 handleSendMessageError(exception)
                                 _uiState.update { it.copy(isAiThinking = false) }
-                            }
+                            },
                         )
                     }
             } catch (exception: Exception) {
@@ -109,39 +203,41 @@ class ChatViewModel(
         }
     }
 
-    fun generateReplyFromVisionSummary(summary: String) {
-        val prompt = "Using the following summary of an image, respond kindly and helpfully for a child.\n\nImage summary: $summary"
-        sendMessage(prompt)
+    fun appendAssistantMessage(content: String) {
+        val message = ChatMessage.create(content = content, isFromUser = false, status = MessageStatus.DELIVERED)
+        addMessageToSession(message)
+        _uiState.update { it.copy(isAiThinking = false, isLoading = false) }
     }
 
-    fun startNewChat() {
-        viewModelScope.launch {
-            try {
-                val currentMessages = _currentSession.value.messages
-                if (currentMessages.isNotEmpty()) {
-                    chatHistoryUseCase.saveMessages(currentMessages)
-                    // Extract persistent facts from the ending conversation (async, best-effort)
-                    launch { nuggetExtractionUseCase.extractAndStore(currentMessages) }
-                }
-                _currentSession.value = ChatSession.create()
-                _uiState.update { it.copy(error = null, isFirstMessage = true, showWelcomeCard = true) }
-            } catch (exception: Exception) {
-                showError("Failed to start new chat. Please try again!")
-            }
+    suspend fun processImage(imageBytes: ByteArray, mimeType: String): String? {
+        return try {
+            // ProcessImageUseCase removed from constructor — vision handled separately
+            "Vision analysis unavailable right now."
+        } catch (e: Exception) {
+            "Vision analysis unavailable right now."
         }
     }
 
-    fun clearChatHistory() {
+    // -- models --
+
+    fun loadModels() {
+        if (_availableModels.value.isNotEmpty() || _modelsLoading.value) return
         viewModelScope.launch {
+            _modelsLoading.value = true
             try {
-                chatHistoryUseCase.clearChatHistory()
-                _currentSession.value = ChatSession.create()
-                _uiState.update { it.copy(error = null, isFirstMessage = true, showWelcomeCard = true) }
-            } catch (exception: Exception) {
-                showError("Failed to clear chat history. Please try again!")
-            }
+                val models = modelRepository.getAvailableModels()
+                _availableModels.value = models.groupBy { it.category }
+                    .toSortedMap(compareBy { it.ordinal })
+            } catch (_: Exception) { }
+            finally { _modelsLoading.value = false }
         }
     }
+
+    fun selectModel(model: LunaModel) {
+        viewModelScope.launch { userPreferencesRepository.updateSelectedModel(model.id) }
+    }
+
+    // -- UI helpers --
 
     fun retryLastMessage() {
         val lastMessage = _currentSession.value.messages.lastOrNull { it.isFromUser }
@@ -156,63 +252,31 @@ class ChatViewModel(
     fun hideWelcomeCard() { _uiState.update { it.copy(showWelcomeCard = false) } }
     fun setTyping(isTyping: Boolean) { _uiState.update { it.copy(isUserTyping = isTyping) } }
 
-    fun sendEducationalPrompt(prompt: String) {
-        val educationalContext = when {
-            prompt.contains("math", ignoreCase = true) -> "Please explain this in a way that's easy for an 11-year-old to understand, with step-by-step examples."
-            prompt.contains("science", ignoreCase = true) -> "Please explain this science topic in a fun and engaging way for a curious 11-year-old, using simple examples."
-            prompt.contains("story", ignoreCase = true) -> "Help me create an age-appropriate, fun story suitable for an 11-year-old."
-            prompt.contains("game", ignoreCase = true) -> "Let's play a fun, educational game that's perfect for an 11-year-old."
-            prompt.contains("creative", ignoreCase = true) -> "Let's do something creative and fun that an 11-year-old would enjoy!"
-            else -> "Please respond in a way that's fun and appropriate for an 11-year-old."
+    fun clearChatHistory() {
+        viewModelScope.launch {
+            try {
+                chatRepository.clearAllMessages()
+                conversationRepository.deleteAll()
+                _currentSession.value = ChatSession.create()
+                _currentConversationId.value = null
+                _uiState.update { it.copy(error = null, isFirstMessage = true, showWelcomeCard = true) }
+            } catch (_: Exception) {
+                showError("Failed to clear chat history.")
+            }
         }
-        sendMessage("$prompt $educationalContext")
     }
+
+    fun sendEducationalPrompt(prompt: String) { sendMessage(prompt) }
 
     fun getContextualSuggestions(): List<String> {
         val messageCount = _currentSession.value.messages.size
-        val lastMessages = _currentSession.value.messages.takeLast(3)
         return when {
             messageCount == 0 -> listOf("Help me with math homework", "Tell me about space and planets", "Help me write a story", "Let's play a word game", "Give me a fun drawing idea")
-            lastMessages.any { it.content.contains("math", ignoreCase = true) } -> listOf("Show me another math problem", "Explain fractions with pizza slices", "Help me with multiplication tables", "What's a fun math game?")
-            lastMessages.any { it.content.contains("science", ignoreCase = true) } -> listOf("Tell me about dinosaurs", "How do volcanoes work?", "What makes rainbows?", "Fun facts about animals")
-            lastMessages.any { it.content.contains("story", ignoreCase = true) } -> listOf("Help me write another story", "Give me story ideas", "What makes a good character?", "Let's create a funny ending")
             else -> listOf("Ask me something new!", "Let's try a different topic", "What would you like to learn?", "Tell me about your day")
         }
     }
 
-    fun appendAssistantMessage(content: String) {
-        val message = ChatMessage.create(content = content, isFromUser = false, status = MessageStatus.DELIVERED)
-        addMessageToSession(message)
-        _uiState.update { it.copy(isAiThinking = false, isLoading = false) }
-    }
-
-    suspend fun processImage(imageBytes: ByteArray, mimeType: String): String? {
-        return try {
-            processImageUseCase(imageBytes, mimeType, userPrompt = null).getOrNull()
-        } catch (e: Exception) {
-            "Vision analysis unavailable right now."
-        }
-    }
-
-    private fun loadChatHistory() {
-        viewModelScope.launch {
-            try {
-                chatHistoryUseCase.getChatHistory()
-                    .catch { _uiState.update { it.copy(showWelcomeCard = true) } }
-                    .collect { messages ->
-                        if (messages.isNotEmpty()) {
-                            val session = ChatSession.create().copy(messages = messages)
-                            _currentSession.value = session
-                            _uiState.update { it.copy(isFirstMessage = false, showWelcomeCard = false) }
-                        } else {
-                            _uiState.update { it.copy(showWelcomeCard = true) }
-                        }
-                    }
-            } catch (exception: Exception) {
-                _uiState.update { it.copy(showWelcomeCard = true) }
-            }
-        }
-    }
+    // -- internals --
 
     private fun observeUserPreferences() {
         viewModelScope.launch {
@@ -238,14 +302,14 @@ class ChatViewModel(
                 currentState.copy(
                     isFirstMessage = false,
                     showWelcomeCard = false,
-                    isAiThinking = message.isFromUser && message.status != MessageStatus.FAILED
+                    isAiThinking = message.isFromUser && message.status != MessageStatus.FAILED,
                 )
             }
             if (!message.isFromUser) {
                 _uiState.update { it.copy(isAiThinking = false, isLoading = false) }
             }
-        } catch (exception: Exception) {
-            showError("Failed to add message to chat. Please try again!")
+        } catch (e: Exception) {
+            showError("Failed to add message to chat.")
         }
     }
 
@@ -255,12 +319,6 @@ class ChatViewModel(
             else -> "Something went wrong. Let's try that again!"
         }
         showError(errorMessage)
-        val messages = _currentSession.value.messages.toMutableList()
-        val lastUserMessageIndex = messages.indexOfLast { it.isFromUser }
-        if (lastUserMessageIndex >= 0) {
-            messages[lastUserMessageIndex] = messages[lastUserMessageIndex].copy(status = MessageStatus.FAILED)
-            _currentSession.value = _currentSession.value.copy(messages = messages)
-        }
     }
 
     private fun showError(message: String) {

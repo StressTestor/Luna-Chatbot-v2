@@ -3,6 +3,7 @@ package com.luna.chat.di
 import com.luna.chat.data.repository.ApiConnectivityTester
 import com.luna.chat.data.repository.ApiKeyProvider
 import com.luna.chat.data.repository.ChatRepositoryImpl
+import com.luna.chat.data.repository.ConversationRepositoryImpl
 import com.luna.chat.data.repository.DefaultApiConnectivityTester
 import com.luna.chat.data.repository.ModelRepositoryImpl
 import com.luna.chat.data.repository.DefaultParentAuthService
@@ -11,6 +12,7 @@ import com.luna.chat.data.repository.SecureApiKeyProvider
 import com.luna.chat.data.repository.UserPreferencesRepositoryImpl
 import com.luna.chat.data.repository.VisionRepositoryImpl
 import com.luna.chat.domain.repository.ChatRepository
+import com.luna.chat.domain.repository.ConversationRepository
 import com.luna.chat.domain.repository.ModelRepository
 import com.luna.chat.domain.repository.UserPreferencesRepository
 import com.luna.chat.domain.repository.VisionRepository
@@ -40,6 +42,7 @@ val commonModule = module {
     singleOf(::VisionRepositoryImpl) bind VisionRepository::class
     singleOf(::UserPreferencesRepositoryImpl) bind UserPreferencesRepository::class
     singleOf(::ModelRepositoryImpl) bind ModelRepository::class
+    singleOf(::ConversationRepositoryImpl) bind ConversationRepository::class
 
     // HRR Memory (Layer 3)
     single { NuggetShelf(SecureNuggetPersistence(get())) }

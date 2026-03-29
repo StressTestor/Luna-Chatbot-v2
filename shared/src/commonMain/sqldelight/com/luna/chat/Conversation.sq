@@ -1,0 +1,29 @@
+CREATE TABLE conversations (
+    id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_conv_updated ON conversations(updated_at DESC);
+
+getAllConversations:
+SELECT * FROM conversations ORDER BY updated_at DESC;
+
+getConversationById:
+SELECT * FROM conversations WHERE id = ?;
+
+insertConversation:
+INSERT OR REPLACE INTO conversations (id, title, created_at, updated_at) VALUES (?, ?, ?, ?);
+
+updateConversationTitle:
+UPDATE conversations SET title = ?, updated_at = ? WHERE id = ?;
+
+updateConversationTimestamp:
+UPDATE conversations SET updated_at = ? WHERE id = ?;
+
+deleteConversation:
+DELETE FROM conversations WHERE id = ?;
+
+deleteAllConversations:
+DELETE FROM conversations;
