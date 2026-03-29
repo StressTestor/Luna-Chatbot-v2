@@ -1,9 +1,9 @@
-build/
-.gradle/
 local.properties
-*.iml
-.idea/
+.gradle/
+build/
 __pycache__/
 *.db
+.idea/
+*.iml
 venv/
 .DS_Store
