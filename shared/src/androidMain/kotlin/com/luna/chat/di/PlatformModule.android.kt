@@ -9,6 +9,6 @@ import org.koin.dsl.module
 actual val platformModule = module {
     single { DatabaseDriverFactory(get()) }
     single { SecureStorage(get()) }
-    single { SpeechRecognition() }
-    single { TextToSpeechEngine() }
+    single { SpeechRecognition(get()) }
+    single { TextToSpeechEngine(get()) }
 }
