@@ -6,7 +6,9 @@ import com.luna.chat.data.remote.dto.GroqMessage
 import com.luna.chat.domain.entity.ChatMessage
 import com.luna.chat.domain.entity.MessageStatus
 import com.luna.chat.domain.repository.ChatRepository
+import com.luna.chat.domain.repository.UserPreferencesRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -16,20 +18,23 @@ import kotlin.uuid.Uuid
 
 class ChatRepositoryImpl(
     private val apiClient: LunaApiClient,
-    private val apiKeyProvider: ApiKeyProvider
+    private val apiKeyProvider: ApiKeyProvider,
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ChatRepository {
 
     companion object {
         private const val MAX_CONVERSATION_HISTORY = 20
-        private val SYSTEM_MESSAGE = """You are Luna, a helpful and friendly AI assistant designed specifically for children.
-            |You should:
-            |- Use simple, age-appropriate language
-            |- Be encouraging and positive
-            |- Help with homework and learning
-            |- Suggest fun and educational activities
-            |- Always prioritize child safety and appropriate content
-            |- Keep responses concise and engaging
-            |Remember to be patient, kind, and educational in all your responses.""".trimMargin()
+        private val SYSTEM_MESSAGE = """You are Luna, a smart and friendly AI assistant.
+            |Your user is a sharp preteen — talk to her like a peer, not a little kid.
+            |Be direct, helpful, and genuine. Match her energy.
+            |Help with homework, creative projects, coding, art, music, whatever she's into.
+            |You can discuss mature topics like history, philosophy, current events, and
+            |emotions honestly — she can handle nuance.
+            |Don't lecture or be preachy. Don't over-explain obvious things.
+            |Keep responses concise unless she asks for detail.
+            |If she's venting, listen first — don't immediately try to fix everything.
+            |Never share or ask for personal info like addresses, phone numbers, or full names.
+            |Never generate explicit sexual content or detailed violence.""".trimMargin()
     }
 
     // In-memory message store (will be backed by SQLDelight in Phase 5)
@@ -44,6 +49,7 @@ class ChatRepositoryImpl(
             }
 
             val apiKey = apiKeyProvider.getApiKey()
+
             if (apiKey.isNullOrBlank()) {
                 emit(Result.failure(IllegalStateException("API key not configured")))
                 return@flow
@@ -63,9 +69,12 @@ class ChatRepositoryImpl(
                 add(GroqMessage.createUserMessage(message.trim()))
             }
 
-            val request = GroqChatRequest.create(messages = messages, maxTokens = 1000)
+            val selectedModel = userPreferencesRepository.userPreferencesFlow.first().selectedModel
+            val request = GroqChatRequest.create(messages = messages, model = selectedModel, maxTokens = 1000)
+
 
             val response = apiClient.sendChatMessage(apiKey, request)
+
             val assistantMessage = response.getAssistantMessage()
 
             if (assistantMessage.isNullOrBlank()) {
@@ -85,6 +94,7 @@ class ChatRepositoryImpl(
 
             emit(Result.success(assistantMessage))
         } catch (e: Exception) {
+
             emit(Result.failure(e))
         }
     }

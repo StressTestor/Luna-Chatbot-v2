@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.luna.chat.domain.entity.ChatMessage
 import com.luna.chat.domain.entity.ChatSession
+import com.luna.chat.domain.entity.LunaModel
 import com.luna.chat.domain.entity.MessageStatus
+import com.luna.chat.domain.entity.ModelCategory
+import com.luna.chat.domain.repository.ModelRepository
 import com.luna.chat.domain.repository.UserPreferencesRepository
 import com.luna.chat.domain.usecase.SendMessageUseCase
 import com.luna.chat.domain.usecase.ChatHistoryUseCase
@@ -17,7 +20,8 @@ class ChatViewModel(
     private val sendMessageUseCase: SendMessageUseCase,
     private val chatHistoryUseCase: ChatHistoryUseCase,
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val processImageUseCase: ProcessImageUseCase
+    private val processImageUseCase: ProcessImageUseCase,
+    private val modelRepository: ModelRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -26,9 +30,37 @@ class ChatViewModel(
     private val _currentSession = MutableStateFlow(ChatSession.create())
     val currentSession: StateFlow<ChatSession> = _currentSession.asStateFlow()
 
+    private val _availableModels = MutableStateFlow<Map<ModelCategory, List<LunaModel>>>(emptyMap())
+    val availableModels: StateFlow<Map<ModelCategory, List<LunaModel>>> = _availableModels.asStateFlow()
+
+    private val _modelsLoading = MutableStateFlow(false)
+    val modelsLoading: StateFlow<Boolean> = _modelsLoading.asStateFlow()
+
     init {
         loadChatHistory()
         observeUserPreferences()
+    }
+
+    fun loadModels() {
+        if (_availableModels.value.isNotEmpty() || _modelsLoading.value) return
+        viewModelScope.launch {
+            _modelsLoading.value = true
+            try {
+                val models = modelRepository.getAvailableModels()
+                _availableModels.value = models.groupBy { it.category }
+                    .toSortedMap(compareBy { it.ordinal })
+            } catch (_: Exception) {
+                // Silently fail — the sheet will show empty state
+            } finally {
+                _modelsLoading.value = false
+            }
+        }
+    }
+
+    fun selectModel(model: LunaModel) {
+        viewModelScope.launch {
+            userPreferencesRepository.updateSelectedModel(model.id)
+        }
     }
 
     fun sendMessage(message: String) {
@@ -184,7 +216,11 @@ class ChatViewModel(
                 .catch { }
                 .collect { preferences ->
                     _uiState.update {
-                        it.copy(isFirstTimeUser = preferences.firstTimeUser, contentFilterEnabled = preferences.contentFilterEnabled)
+                        it.copy(
+                            isFirstTimeUser = preferences.firstTimeUser,
+                            contentFilterEnabled = preferences.contentFilterEnabled,
+                            selectedModel = preferences.selectedModel,
+                        )
                     }
                 }
         }
@@ -236,7 +272,8 @@ data class ChatUiState(
     val isFirstMessage: Boolean = true,
     val isFirstTimeUser: Boolean = true,
     val showWelcomeCard: Boolean = true,
-    val contentFilterEnabled: Boolean = true
+    val contentFilterEnabled: Boolean = true,
+    val selectedModel: String = "nvidia/nemotron-3-super-120b-a12b:free",
 ) {
     val canSendMessage: Boolean get() = !isLoading && !isAiThinking
     val showTypingIndicator: Boolean get() = isAiThinking && !isLoading

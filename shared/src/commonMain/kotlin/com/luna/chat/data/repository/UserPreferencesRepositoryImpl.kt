@@ -35,6 +35,7 @@ class UserPreferencesRepositoryImpl(
             lastUpdated = row.updated_at,
             appVersion = row.app_version,
             totalMessagesSent = row.total_messages_sent.toInt(),
+            selectedModel = row.selected_model,
             favoriteThemeColors = emptySet()
         )
     }
@@ -81,6 +82,11 @@ class UserPreferencesRepositoryImpl(
 
     override suspend fun incrementMessagesSent() {
         database.userPreferencesQueries.incrementMessagesSent(now())
+        refreshPrefs()
+    }
+
+    override suspend fun updateSelectedModel(modelId: String) {
+        database.userPreferencesQueries.updateSelectedModel(modelId, now())
         refreshPrefs()
     }
 

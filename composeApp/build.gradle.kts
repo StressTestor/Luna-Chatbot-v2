@@ -29,6 +29,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Pre-seeded API key — read from local.properties (OPENROUTER_API_KEY)
+        // or the env var of the same name. LunaApplication stores it in
+        // SecureStorage on first launch so the app works out of the box.
+        buildConfigField(
+            "String",
+            "OPENROUTER_API_KEY",
+            "\"${signingProp("OPENROUTER_API_KEY") ?: ""}\""
+        )
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     signingConfigs {

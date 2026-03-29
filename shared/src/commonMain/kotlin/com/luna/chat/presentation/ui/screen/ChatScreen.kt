@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -39,6 +40,7 @@ import com.luna.chat.presentation.ui.components.ImageAttachmentButton
 import com.luna.chat.presentation.ui.components.ImagePreviewDialog
 import com.luna.chat.presentation.ui.components.MessageBubble
 import com.luna.chat.presentation.ui.components.MessageInput
+import com.luna.chat.presentation.ui.components.ModelSelectorSheet
 import com.luna.chat.presentation.ui.components.SimpleTypingIndicator
 import com.luna.chat.presentation.ui.components.TypingIndicator
 import com.luna.chat.presentation.ui.components.WelcomeCard
@@ -56,8 +58,11 @@ fun ChatScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentSession by viewModel.currentSession.collectAsState()
+    val availableModels by viewModel.availableModels.collectAsState()
+    val modelsLoading by viewModel.modelsLoading.collectAsState()
 
     var messageText by remember { mutableStateOf("") }
+    var showModelSheet by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
@@ -78,10 +83,25 @@ fun ChatScreen(
         viewModel.setTyping(messageText.isNotEmpty())
     }
 
+    if (showModelSheet) {
+        ModelSelectorSheet(
+            models = availableModels,
+            selectedModelId = uiState.selectedModel,
+            isLoading = modelsLoading,
+            onModelSelected = { viewModel.selectModel(it) },
+            onDismiss = { showModelSheet = false },
+        )
+    }
+
     Scaffold(
         modifier = modifier.testTag("chat_screen"),
         topBar = {
-            ChatTopBar(onSettingsClick = onSettingsClick, onNewChatClick = { viewModel.startNewChat(); messageText = "" })
+            ChatTopBar(
+                selectedModel = uiState.selectedModel,
+                onModelClick = { viewModel.loadModels(); showModelSheet = true },
+                onSettingsClick = onSettingsClick,
+                onNewChatClick = { viewModel.startNewChat(); messageText = "" },
+            )
         },
         bottomBar = {
             Column {
@@ -152,12 +172,33 @@ fun ChatScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ChatTopBar(onSettingsClick: () -> Unit, onNewChatClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ChatTopBar(
+    selectedModel: String,
+    onModelClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onNewChatClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shortModelName = selectedModel
+        .substringBefore(":free")
+        .substringAfter("/")
+
     TopAppBar(
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(text = "\uD83C\uDF19", fontSize = 24.sp)
-                Text(text = "Luna", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = "\uD83C\uDF19", fontSize = 24.sp)
+                    Text(text = "Luna", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                }
+                Text(
+                    text = "$shortModelName \u25BE",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable(onClick = onModelClick)
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                )
             }
         },
         actions = {
@@ -174,9 +215,9 @@ private fun ChatTopBar(onSettingsClick: () -> Unit, onNewChatClick: () -> Unit, 
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
-            titleContentColor = MaterialTheme.colorScheme.onSurface
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
         ),
-        modifier = modifier.testTag("chat_top_bar")
+        modifier = modifier.testTag("chat_top_bar"),
     )
 }
 

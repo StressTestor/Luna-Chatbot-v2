@@ -14,6 +14,7 @@ interface UserPreferencesRepository {
     suspend fun updateVoiceInput(enabled: Boolean)
     suspend fun updateAppVersion(version: String)
     suspend fun incrementMessagesSent()
+    suspend fun updateSelectedModel(modelId: String)
     suspend fun updateFavoriteThemeColors(colors: Set<String>)
     suspend fun resetToDefaults()
 }

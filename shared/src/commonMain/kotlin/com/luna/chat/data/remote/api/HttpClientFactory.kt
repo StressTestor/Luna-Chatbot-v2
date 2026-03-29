@@ -16,6 +16,7 @@ fun createHttpClient(): HttpClient {
                 ignoreUnknownKeys = true
                 isLenient = true
                 prettyPrint = false
+                encodeDefaults = true
             })
         }
 
@@ -26,7 +27,7 @@ fun createHttpClient(): HttpClient {
         }
 
         install(Logging) {
-            level = LogLevel.NONE // Override per-platform if needed
+            level = LogLevel.NONE
         }
 
         defaultRequest {
