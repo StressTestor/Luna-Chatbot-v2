@@ -11,6 +11,7 @@ kotlinx-datetime = "0.6.1"
 androidx-core = "1.12.0"
 androidx-lifecycle = "2.7.0"
 androidx-activity = "1.8.2"
+androidx-splashscreen = "1.0.1"
 androidx-navigation = "2.7.5"
 multiplatform-settings = "1.2.0"
 
@@ -52,6 +53,7 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version = "1.1.0-alpha06" }
+androidx-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-splashscreen" }
 
 # SQLCipher (Android)
 sqlcipher-android = { module = "net.zetetic:android-database-sqlcipher", version = "4.5.4" }
