@@ -1,3 +1,5 @@
+import java.io.FileInputStream
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -6,6 +8,14 @@ plugins {
     alias(libs.plugins.kotlin.compose.compiler)
     alias(libs.plugins.compose.multiplatform)
 }
+
+private val localProps = Properties().also { props ->
+    val f = rootProject.file("local.properties")
+    if (f.exists()) props.load(FileInputStream(f))
+}
+
+fun signingProp(key: String): String? =
+    localProps.getProperty(key) ?: System.getenv(key)
 
 android {
     namespace = "com.luna.chat"
@@ -21,13 +31,28 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile     = signingProp("KEYSTORE_PATH")?.let { file(it) }
+            storePassword = signingProp("KEYSTORE_PASSWORD")
+            keyAlias      = signingProp("KEY_ALIAS")
+            keyPassword   = signingProp("KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled    = true
+            isShrinkResources  = true
+            signingConfig      = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
+        }
+        debug {
+            isMinifyEnabled   = false
+            isShrinkResources = false
         }
     }
 
