@@ -115,7 +115,7 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    override suspend fun sendMessage(message: String, conversationId: String): Flow<Result<String>> = flow {
+    override suspend fun sendMessage(message: String, conversationId: String): Flow<Result<ChatMessage>> = flow {
         try {
             if (message.isBlank()) {
                 emit(Result.failure(IllegalArgumentException("Message cannot be empty")))
@@ -161,33 +161,39 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
             println("Luna:Repo: sending to API...")
             val response = apiClient.sendChatMessage(apiKey, request)
             println("Luna:Repo: got response")
-            val rawAssistant = response.getAssistantMessage()
+            val firstChoice = response.getFirstChoice()
+            val rawContent = firstChoice?.message?.content?.takeIf { it.isNotBlank() }
+                ?: firstChoice?.message?.reasoning?.takeIf { it.isNotBlank() }
+            val rawReasoning = firstChoice?.message?.reasoning?.takeIf { it.isNotBlank() }
 
-            if (rawAssistant.isNullOrBlank()) {
+            if (rawContent.isNullOrBlank()) {
                 emit(Result.failure(IllegalStateException("Empty response from AI")))
                 return@flow
             }
 
             // Parse and process [REMEMBER: topic | key | value] tags
-            val parsed = parseMemoryTags(rawAssistant)
+            val parsed = parseMemoryTags(rawContent)
             for ((topic, key, value) in parsed.memoryTags) {
                 nuggetShelf.remember(topic, key, value)
             }
 
-            val assistantMessage = parsed.cleanedText
+            // If content was null but reasoning existed, content IS the reasoning
+            // Only set reasoning separately when BOTH content and reasoning exist
+            val finalContent = parsed.cleanedText
+            val finalReasoning = if (firstChoice?.message?.content != null) rawReasoning else null
 
-            // Persist AI message to SQLite
             val aiMessage = ChatMessage(
                 id = Uuid.random().toString(),
-                content = assistantMessage,
+                content = finalContent,
                 isFromUser = false,
                 timestamp = Clock.System.now().toEpochMilliseconds(),
                 status = MessageStatus.DELIVERED,
+                reasoning = finalReasoning,
             )
             persistMessage(aiMessage, conversationId)
             conversationRepository.touch(conversationId)
 
-            emit(Result.success(assistantMessage))
+            emit(Result.success(aiMessage))
         } catch (e: Exception) {
             emit(Result.failure(e))
         }
@@ -203,6 +209,7 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
                     isFromUser = row.is_from_user != 0L,
                     timestamp = row.timestamp,
                     status = MessageStatus.valueOf(row.status),
+                    reasoning = row.reasoning,
                 )
             }
     }
@@ -212,6 +219,7 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
             id = message.id,
             content = message.content,
             is_from_user = if (message.isFromUser) 1L else 0L,
+            reasoning = message.reasoning,
             timestamp = message.timestamp,
             session_id = conversationId,
             status = message.status.name,

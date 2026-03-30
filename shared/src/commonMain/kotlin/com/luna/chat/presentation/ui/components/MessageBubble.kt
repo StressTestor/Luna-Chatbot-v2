@@ -1,10 +1,12 @@
 package com.luna.chat.presentation.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -105,14 +107,21 @@ private fun AiMessageBubble(message: ChatMessage, modifier: Modifier = Modifier)
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Text(
-                    text = message.content,
-                    modifier = Modifier.padding(16.dp).testTag("ai_message_text"),
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Normal
+                Column(modifier = Modifier.animateContentSize()) {
+                    // Collapsible reasoning section (like ChatGPT/Claude thinking dropdown)
+                    if (!message.reasoning.isNullOrBlank()) {
+                        ReasoningDropdown(reasoning = message.reasoning)
+                    }
+
+                    Text(
+                        text = message.content,
+                        modifier = Modifier.padding(16.dp).testTag("ai_message_text"),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Normal
+                        )
                     )
-                )
+                }
             }
         }
         Text(
@@ -121,6 +130,62 @@ private fun AiMessageBubble(message: ChatMessage, modifier: Modifier = Modifier)
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp, start = 48.dp).testTag("ai_message_timestamp")
         )
+    }
+}
+
+@Composable
+private fun ReasoningDropdown(reasoning: String) {
+    var expanded by remember { mutableStateOf(false) }
+    val summary = reasoning.take(60).replace("\n", " ").trim().let {
+        if (reasoning.length > 60) "$it..." else it
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+    ) {
+        // Header row — tappable
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(6.dp))
+                .clickable { expanded = !expanded }
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = if (expanded) "\u25BE" else "\u25B8",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = if (expanded) "Thought process" else summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                maxLines = if (expanded) Int.MAX_VALUE else 1,
+            )
+        }
+
+        // Expanded reasoning content
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f),
+                    thickness = 0.5.dp,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = reasoning,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                    ),
+                )
+            }
+        }
     }
 }
 

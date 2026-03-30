@@ -177,18 +177,10 @@ class ChatViewModel(
                     }
                     .collect { result ->
                         result.fold(
-                            onSuccess = { aiResponse ->
-                                val aiMessage = ChatMessage.create(
-                                    content = aiResponse,
-                                    isFromUser = false,
-                                    status = MessageStatus.DELIVERED,
-                                )
-                                chatRepository.persistMessage(aiMessage, convId)
+                            onSuccess = { aiMessage ->
+                                // aiMessage is already persisted by ChatRepositoryImpl
                                 addMessageToSession(aiMessage)
-                                conversationRepository.touch(convId)
-                                if (!aiMessage.isFromUser) {
-                                    userPreferencesRepository.incrementMessagesSent()
-                                }
+                                userPreferencesRepository.incrementMessagesSent()
                             },
                             onFailure = { exception ->
                                 handleSendMessageError(exception)
@@ -338,7 +330,7 @@ data class ChatUiState(
     val isFirstTimeUser: Boolean = true,
     val showWelcomeCard: Boolean = true,
     val contentFilterEnabled: Boolean = true,
-    val selectedModel: String = "nvidia/nemotron-3-super-120b-a12b:free",
+    val selectedModel: String = "meta-llama/llama-3.3-70b-instruct:free",
 ) {
     val canSendMessage: Boolean get() = !isLoading && !isAiThinking
     val showTypingIndicator: Boolean get() = isAiThinking && !isLoading

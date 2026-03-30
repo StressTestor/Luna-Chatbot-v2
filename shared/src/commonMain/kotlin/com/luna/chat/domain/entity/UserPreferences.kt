@@ -16,7 +16,7 @@ data class UserPreferences(
 ) {
     companion object {
         const val DEFAULT_THEME = "rainbow"
-        const val DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
+        const val DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
         const val DEFAULT_AUTO_CLEAR_DAYS = 30
         const val DEFAULT_PARENTAL_CONTROLS = true
         const val DEFAULT_CONTENT_FILTER = true

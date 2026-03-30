@@ -8,7 +8,8 @@ data class ChatMessage(
     val content: String,
     val isFromUser: Boolean,
     val timestamp: Long,
-    val status: MessageStatus
+    val status: MessageStatus,
+    val reasoning: String? = null,
 ) {
     init {
         validateMessage()
@@ -40,14 +41,16 @@ data class ChatMessage(
             content: String,
             isFromUser: Boolean,
             timestamp: Long = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
-            status: MessageStatus = if (isFromUser) MessageStatus.SENDING else MessageStatus.DELIVERED
+            status: MessageStatus = if (isFromUser) MessageStatus.SENDING else MessageStatus.DELIVERED,
+            reasoning: String? = null,
         ): ChatMessage {
             return ChatMessage(
                 id = Uuid.random().toString(),
                 content = content.trim(),
                 isFromUser = isFromUser,
                 timestamp = timestamp,
-                status = status
+                status = status,
+                reasoning = reasoning,
             )
         }
     }

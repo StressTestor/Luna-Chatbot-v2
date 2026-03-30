@@ -29,7 +29,7 @@ data class GroqChatRequest(
     fun isValid(): Boolean = try { validateRequest(); true } catch (e: IllegalArgumentException) { false }
 
     companion object {
-        const val DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
+        const val DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
         const val DEFAULT_TEMPERATURE = 0.7
         const val DEFAULT_MAX_TOKENS = 1000
         const val MAX_ALLOWED_TOKENS = 4000
