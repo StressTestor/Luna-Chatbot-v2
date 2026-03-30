@@ -55,7 +55,17 @@ you have a memory system that works across conversations. here's what you should
 - **how facts get promoted**: when a fact comes up naturally 3 or more times across different conversations, it gets promoted into your permanent context. you'll see these facts in a <user_facts> section below when they exist.
 - **what this means practically**: you should remember things she's told you before. if she mentioned her cat's name last week, you should know it in future conversations (once it's been mentioned enough to promote). you don't need to announce "I remember that!" — just use the knowledge naturally, like a friend would.
 - **conversations persist**: her past conversations are saved on her device. she can open the side menu (hamburger icon) to browse and resume old chats.
-- if she asks how your memory works, explain it honestly in simple terms: "i learn things about you from our conversations and remember them for next time. the more something comes up, the more permanently i remember it. everything's stored on your phone, encrypted."
+- if she asks how your memory works, explain it honestly in simple terms: "i learn things about you from our conversations and remember them for next time. the more something comes up, the more permanently i remember it. everything's stored on your phone, encrypted. you can also just tell me to remember something specific."
+- **manual memory**: when she explicitly asks you to remember something ("remember that my favorite color is blue", "don't forget i have a test on friday", "save this: i like drawing cats"), you MUST include a memory tag in your response. format:
+  `[REMEMBER: topic | key | value]`
+  where topic is one of: personal, interests, school, style, context
+  key is a short label (2-5 words, snake_case)
+  value is the fact (1-10 words)
+  example: if she says "remember that my favorite color is purple", respond naturally AND include:
+  `[REMEMBER: interests | favorite_color | purple]`
+  the tag will be automatically stripped from what she sees. she'll just see your natural response.
+  you can include multiple tags if she asks you to remember multiple things.
+  only use this when she EXPLICITLY asks you to remember something. don't tag things she mentions casually.
 
 ## how to behave
 
@@ -151,12 +161,20 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
             println("Luna:Repo: sending to API...")
             val response = apiClient.sendChatMessage(apiKey, request)
             println("Luna:Repo: got response")
-            val assistantMessage = response.getAssistantMessage()
+            val rawAssistant = response.getAssistantMessage()
 
-            if (assistantMessage.isNullOrBlank()) {
+            if (rawAssistant.isNullOrBlank()) {
                 emit(Result.failure(IllegalStateException("Empty response from AI")))
                 return@flow
             }
+
+            // Parse and process [REMEMBER: topic | key | value] tags
+            val parsed = parseMemoryTags(rawAssistant)
+            for ((topic, key, value) in parsed.memoryTags) {
+                nuggetShelf.remember(topic, key, value)
+            }
+
+            val assistantMessage = parsed.cleanedText
 
             // Persist AI message to SQLite
             val aiMessage = ChatMessage(
@@ -207,4 +225,28 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
     override suspend fun clearAllMessages() {
         database.chatMessageQueries.clearAllMessages()
     }
+
+    // -- memory tag parsing --
+
+    private data class MemoryTag(val topic: String, val key: String, val value: String)
+    private data class ParsedResponse(val cleanedText: String, val memoryTags: List<MemoryTag>)
+
+    private val memoryTagPattern = Regex("""\[REMEMBER:\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^\]]+)\s*]""")
+
+    private fun parseMemoryTags(text: String): ParsedResponse {
+        val tags = mutableListOf<MemoryTag>()
+        val cleaned = memoryTagPattern.replace(text) { match ->
+            val topic = match.groupValues[1].trim().lowercase()
+            val key = match.groupValues[2].trim().take(50).replace("\n", " ")
+            val value = match.groupValues[3].trim().take(100).replace("\n", " ")
+            if (topic in validTopics && key.isNotEmpty() && value.isNotEmpty()) {
+                tags.add(MemoryTag(topic, key, value))
+            }
+            "" // strip the tag from displayed text
+        }.trim().replace(Regex("\n{3,}"), "\n\n") // collapse leftover blank lines
+
+        return ParsedResponse(cleaned, tags)
+    }
+
+    private val validTopics = setOf("personal", "interests", "school", "style", "context")
 }
