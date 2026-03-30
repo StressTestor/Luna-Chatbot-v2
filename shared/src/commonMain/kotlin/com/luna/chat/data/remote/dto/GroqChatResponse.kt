@@ -13,7 +13,12 @@ data class GroqChatResponse(
     @SerialName("model") val model: String? = null
 ) {
     fun getFirstChoice(): GroqChoice? = choices.firstOrNull()
-    fun getAssistantMessage(): String? = getFirstChoice()?.message?.content
+    fun getAssistantMessage(): String? {
+        val msg = getFirstChoice()?.message ?: return null
+        // Prefer content, fall back to reasoning (for reasoning models like nemotron)
+        return msg.content?.takeIf { it.isNotBlank() }
+            ?: msg.reasoning?.takeIf { it.isNotBlank() }
+    }
     fun isComplete(): Boolean = getFirstChoice()?.finishReason == FINISH_REASON_STOP
 
     companion object {
@@ -25,13 +30,26 @@ data class GroqChatResponse(
 
 @Serializable
 data class GroqChoice(
-    @SerialName("message") val message: GroqMessage,
+    @SerialName("message") val message: ResponseMessage,
     @SerialName("finish_reason") val finishReason: String? = null,
-    @SerialName("index") val index: Int? = null
+    @SerialName("index") val index: Int? = null,
 ) {
     fun isComplete(): Boolean = finishReason == GroqChatResponse.FINISH_REASON_STOP
     fun wasContentFiltered(): Boolean = finishReason == GroqChatResponse.FINISH_REASON_CONTENT_FILTER
 }
+
+/**
+ * Response message from the API. Unlike [GroqMessage] (used for requests),
+ * content can be null — reasoning models put their output in the reasoning
+ * field instead.
+ */
+@Serializable
+data class ResponseMessage(
+    @SerialName("role") val role: String? = null,
+    @SerialName("content") val content: String? = null,
+    @SerialName("reasoning") val reasoning: String? = null,
+    @SerialName("refusal") val refusal: String? = null,
+)
 
 @Serializable
 data class GroqUsage(

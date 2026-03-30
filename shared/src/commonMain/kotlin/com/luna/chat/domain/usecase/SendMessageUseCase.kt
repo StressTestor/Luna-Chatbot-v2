@@ -11,6 +11,7 @@ class SendMessageUseCase constructor(
 ) {
     suspend operator fun invoke(userMessage: String, conversationId: String): Flow<Result<String>> = flow {
         try {
+            println("Luna:SendMsg: invoke called, msg='${userMessage.take(20)}', convId=$conversationId")
             val filteredInput = contentFilterUseCase.filterUserInput(userMessage)
 
             if (filteredInput.isFiltered) {

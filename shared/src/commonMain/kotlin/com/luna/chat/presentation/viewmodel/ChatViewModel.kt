@@ -141,6 +141,7 @@ class ChatViewModel(
 
         viewModelScope.launch {
             try {
+                println("Luna:VM: sendMessage start, convId=${_currentConversationId.value}")
                 _uiState.update { it.copy(isLoading = true, error = null) }
 
                 // Ensure we have a conversation
@@ -196,6 +197,8 @@ class ChatViewModel(
                         )
                     }
             } catch (exception: Exception) {
+                println("Luna:VM: EXCEPTION in sendMessage: ${exception::class.simpleName}: ${exception.message}")
+                exception.printStackTrace()
                 handleSendMessageError(exception)
             } finally {
                 _uiState.update { it.copy(isLoading = false) }

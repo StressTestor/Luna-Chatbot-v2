@@ -146,9 +146,11 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
             }
 
             val selectedModel = userPreferencesRepository.userPreferencesFlow.first().selectedModel
+            println("Luna:Repo: building request, model=$selectedModel, msgs=${messages.size}, sysLen=${messages[0].content.length}")
             val request = GroqChatRequest.create(messages = messages, model = selectedModel, maxTokens = 1000)
-
+            println("Luna:Repo: sending to API...")
             val response = apiClient.sendChatMessage(apiKey, request)
+            println("Luna:Repo: got response")
             val assistantMessage = response.getAssistantMessage()
 
             if (assistantMessage.isNullOrBlank()) {
