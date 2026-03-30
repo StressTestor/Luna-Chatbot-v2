@@ -136,8 +136,8 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
                     else GroqMessage.createAssistantMessage(msg.content)
                 }
 
-            // Inject promoted nuggets into system prompt
-            val promotedFacts = nuggetShelf.getPromotedFacts()
+            // Inject ALL known facts into system prompt (single user, small fact count)
+            val promotedFacts = nuggetShelf.getPromotedFacts(threshold = 0)
             val systemMessage = if (promotedFacts.isNotEmpty()) {
                 val factsBlock = promotedFacts.joinToString("\n") { (_, fact) ->
                     val safeKey = fact.key.take(50).replace("\n", " ").trim()
@@ -156,7 +156,7 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
             }
 
             val selectedModel = userPreferencesRepository.userPreferencesFlow.first().selectedModel
-            println("Luna:Repo: building request, model=$selectedModel, msgs=${messages.size}, sysLen=${messages[0].content.length}")
+            println("Luna:Repo: building request, model=$selectedModel, msgs=${messages.size}, sysLen=${messages[0].content.length}, facts=${promotedFacts.size}")
             val request = GroqChatRequest.create(messages = messages, model = selectedModel, maxTokens = 1000)
             println("Luna:Repo: sending to API...")
             val response = apiClient.sendChatMessage(apiKey, request)
@@ -172,9 +172,14 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
             }
 
             // Parse and process [REMEMBER: topic | key | value] tags
+            println("Luna:Repo: raw response (first 200): ${rawContent.take(200)}")
             val parsed = parseMemoryTags(rawContent)
-            for ((topic, key, value) in parsed.memoryTags) {
-                nuggetShelf.remember(topic, key, value)
+            if (parsed.memoryTags.isNotEmpty()) {
+                println("Luna:Repo: found ${parsed.memoryTags.size} REMEMBER tags")
+                for ((topic, key, value) in parsed.memoryTags) {
+                    println("Luna:Repo: storing fact: $topic | $key | $value")
+                    nuggetShelf.remember(topic, key, value)
+                }
             }
 
             // If content was null but reasoning existed, content IS the reasoning
