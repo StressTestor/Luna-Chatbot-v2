@@ -9,4 +9,5 @@ interface ChatRepository {
     suspend fun persistMessage(message: ChatMessage, conversationId: String)
     suspend fun clearConversationMessages(conversationId: String)
     suspend fun clearAllMessages()
+    suspend fun generateTitle(userMessage: String, aiResponse: String): String?
 }

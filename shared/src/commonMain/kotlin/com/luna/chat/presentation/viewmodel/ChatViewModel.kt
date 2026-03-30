@@ -147,17 +147,12 @@ class ChatViewModel(
                 // Ensure we have a conversation
                 var convId = _currentConversationId.value
                 if (convId == null) {
+                    // Title starts as first message (placeholder until AI generates one)
                     val conv = conversationRepository.createConversation(
                         title = trimmedMessage.take(40),
                     )
                     convId = conv.id
                     _currentConversationId.value = convId
-                }
-
-                // Set conversation title from first message if untitled
-                val conv = conversationRepository.getConversation(convId)
-                if (conv != null && conv.title.isBlank()) {
-                    conversationRepository.updateTitle(convId, trimmedMessage.take(40))
                 }
 
                 // Create and persist user message
@@ -178,9 +173,20 @@ class ChatViewModel(
                     .collect { result ->
                         result.fold(
                             onSuccess = { aiMessage ->
-                                // aiMessage is already persisted by ChatRepositoryImpl
                                 addMessageToSession(aiMessage)
                                 userPreferencesRepository.incrementMessagesSent()
+
+                                // Generate AI title after first exchange in a conversation
+                                val conv = conversationRepository.getConversation(convId)
+                                if (conv != null && (conv.title == trimmedMessage.take(40) || conv.title.isBlank())) {
+                                    launch {
+                                        val title = chatRepository
+                                            .generateTitle(trimmedMessage, aiMessage.content)
+                                        if (!title.isNullOrBlank()) {
+                                            conversationRepository.updateTitle(convId, title)
+                                        }
+                                    }
+                                }
                             },
                             onFailure = { exception ->
                                 handleSendMessageError(exception)

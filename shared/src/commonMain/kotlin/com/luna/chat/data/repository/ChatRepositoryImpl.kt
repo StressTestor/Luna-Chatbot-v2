@@ -239,6 +239,35 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
         database.chatMessageQueries.clearAllMessages()
     }
 
+    /**
+     * Ask the current model to generate a short conversation title from the
+     * first user message + AI response. Returns null on any failure.
+     */
+    override suspend fun generateTitle(userMessage: String, aiResponse: String): String? {
+        return try {
+            val apiKey = apiKeyProvider.getApiKey() ?: return null
+            val selectedModel = userPreferencesRepository.userPreferencesFlow.first().selectedModel
+            val request = GroqChatRequest.create(
+                messages = listOf(
+                    GroqMessage.createSystemMessage(
+                        "Generate a short conversation title (3-6 words, no quotes, no punctuation at the end) " +
+                        "that summarizes what this chat is about. Return ONLY the title, nothing else."
+                    ),
+                    GroqMessage.createUserMessage("User: $userMessage\nAssistant: ${aiResponse.take(200)}"),
+                ),
+                model = selectedModel,
+                maxTokens = 20,
+            )
+            val response = apiClient.sendChatMessage(apiKey, request)
+            response.getAssistantMessage()
+                ?.trim()
+                ?.removeSurrounding("\"")
+                ?.take(60)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     // -- memory tag parsing --
 
     private data class MemoryTag(val topic: String, val key: String, val value: String)
