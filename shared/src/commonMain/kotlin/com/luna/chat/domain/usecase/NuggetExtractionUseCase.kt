@@ -8,6 +8,7 @@ import com.luna.chat.domain.entity.ChatMessage
 import com.luna.chat.domain.entity.UserPreferences
 import com.luna.chat.domain.repository.UserPreferencesRepository
 import com.luna.chat.hrr.NuggetShelf
+import com.luna.chat.security.PiiRedactor
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -26,6 +27,8 @@ class NuggetExtractionUseCase(
     private val apiKeyProvider: ApiKeyProvider,
     private val nuggetShelf: NuggetShelf,
     private val userPreferencesRepository: UserPreferencesRepository,
+    private val piiRedactor: PiiRedactor,
+    private val contentFilter: ContentFilterUseCase,
 ) {
 
     @Serializable
@@ -47,7 +50,8 @@ class NuggetExtractionUseCase(
 
         val conversationText = messages.takeLast(10).joinToString("\n") { msg ->
             val role = if (msg.isFromUser) "User" else "Luna"
-            "$role: ${msg.content.take(500)}"
+            val scrubbed = piiRedactor.redact(msg.content.take(500))
+            "$role: $scrubbed"
         }.take(6000) // stay within MAX_CONTENT_LENGTH with room for the prompt
 
         val extractionPrompt = """Analyze this conversation and extract persistent facts about the user.
@@ -100,9 +104,16 @@ Return ONLY the JSON array, no other text."""
                 val topic = fact.topic.lowercase().trim()
                 val key = fact.key.trim().take(50).replace("\n", " ")
                 val value = fact.value.trim().take(100).replace("\n", " ")
-                if (key.isNotEmpty() && value.isNotEmpty() && topic in NuggetShelf.Topics.ALL) {
-                    nuggetShelf.remember(topic, key, value)
+                if (key.isEmpty() || value.isEmpty()) continue
+                if (topic !in NuggetShelf.Topics.ALL) continue
+                // Extracted facts are later injected into the system prompt as
+                // trusted context. Reject anything that looks like an attempt
+                // to smuggle instructions into that channel.
+                if (contentFilter.isJailbreakLike(key) || contentFilter.isJailbreakLike(value)) {
+                    println("Luna:NuggetExtraction: dropped suspicious fact ($topic/$key)")
+                    continue
                 }
+                nuggetShelf.remember(topic, key, value)
             }
         } catch (e: Exception) {
             println("Luna:NuggetExtraction: ${e::class.simpleName}: ${e.message}")

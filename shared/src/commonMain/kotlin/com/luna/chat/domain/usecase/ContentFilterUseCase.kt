@@ -1,17 +1,26 @@
 package com.luna.chat.domain.usecase
 
 import com.luna.chat.domain.exception.ChatException
+import com.luna.chat.security.compressNonLetters
+import com.luna.chat.security.normalizeForFilter
 
 class ContentFilterUseCase constructor() {
 
     // Hard-block list: only content that has zero legitimate use in conversation.
     // Everything else is handled by the LLM system prompt which is far better at
     // understanding context than a keyword list ever will be.
-    private val blockedPatterns = listOf(
+    private val blockedTerms = listOf(
         "porn", "pornography", "hentai",
         "how to make a bomb", "how to make a weapon",
         "how to kill", "how to hurt",
-    ).map { "\\b${Regex.escape(it)}\\b".toRegex(RegexOption.IGNORE_CASE) }
+    )
+    private val blockedPatterns = blockedTerms.map {
+        "\\b${Regex.escape(it)}\\b".toRegex(RegexOption.IGNORE_CASE)
+    }
+    // For obfuscation like "p.o.r.n" or "p o r n", match against the
+    // letters-only compressed form. Only use short single-token blocks here;
+    // multi-word phrases would over-match after compression.
+    private val blockedCompressedTerms = listOf("porn", "pornography", "hentai")
 
     // Prompt injection / jailbreak patterns — prevent the LLM system prompt
     // from being overridden.
@@ -45,9 +54,10 @@ class ContentFilterUseCase constructor() {
             )
         }
 
-        val lower = cleanInput.lowercase()
+        val normalized = normalizeForFilter(cleanInput)
+        val compressed = compressNonLetters(normalized)
 
-        if (blockedPatterns.any { it.containsMatchIn(lower) }) {
+        if (matchesBlocked(normalized, compressed)) {
             return FilterResult(
                 content = input,
                 isFiltered = true,
@@ -57,7 +67,7 @@ class ContentFilterUseCase constructor() {
             )
         }
 
-        if (jailbreakPatterns.any { it.containsMatchIn(lower) }) {
+        if (isJailbreakLike(normalized)) {
             return FilterResult(
                 content = input,
                 isFiltered = true,
@@ -68,6 +78,21 @@ class ContentFilterUseCase constructor() {
         }
 
         return FilterResult(content = input, isFiltered = false, reason = null)
+    }
+
+    /**
+     * Check whether arbitrary text contains a jailbreak-style trigger.
+     * Exposed so other use cases (e.g. fact extraction) can reject text
+     * that would otherwise end up in a future system prompt.
+     */
+    fun isJailbreakLike(text: String): Boolean {
+        val normalized = normalizeForFilter(text)
+        return jailbreakPatterns.any { it.containsMatchIn(normalized) }
+    }
+
+    private fun matchesBlocked(normalized: String, compressed: String): Boolean {
+        if (blockedPatterns.any { it.containsMatchIn(normalized) }) return true
+        return blockedCompressedTerms.any { compressed.contains(it) }
     }
 
     fun filterAiResponse(response: String): FilterResult {
@@ -84,7 +109,9 @@ class ContentFilterUseCase constructor() {
         }
 
         // Only hard-block the same explicit content in responses
-        if (blockedPatterns.any { it.containsMatchIn(cleanResponse.lowercase()) }) {
+        val normalized = normalizeForFilter(cleanResponse)
+        val compressed = compressNonLetters(normalized)
+        if (matchesBlocked(normalized, compressed)) {
             return FilterResult(
                 content = response,
                 isFiltered = true,
