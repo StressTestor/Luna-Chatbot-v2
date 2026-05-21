@@ -12,32 +12,27 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import com.luna.chat.permissions.rememberVisionPermissionHandler
 
 @Composable
 fun ImageAttachmentButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
-    val visionHandler = rememberVisionPermissionHandler(
-        onPermissionsGranted = onClick,
-    )
-
     IconButton(
-        onClick = visionHandler.onClick,
+        onClick = onClick,
         enabled = enabled,
         modifier = modifier
             .testTag("image_attachment_button")
             .semantics {
                 contentDescription = "Attach image"
                 role = Role.Button
-            }
+            },
     ) {
         Icon(
             imageVector = Icons.Filled.Image,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface
+            tint = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

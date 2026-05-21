@@ -31,8 +31,11 @@ data class GroqChatRequest(
     companion object {
         const val DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
         const val DEFAULT_TEMPERATURE = 0.7
-        const val DEFAULT_MAX_TOKENS = 1000
-        const val MAX_ALLOWED_TOKENS = 4000
+        // Reasoning models (nemotron, deepseek-r1, qwq, etc.) routinely burn
+        // 2k+ tokens in the reasoning field before producing the actual answer.
+        // A 1k cap caused responses to end mid-think with empty content.
+        const val DEFAULT_MAX_TOKENS = 4000
+        const val MAX_ALLOWED_TOKENS = 8000
 
         fun create(
             messages: List<GroqMessage>,

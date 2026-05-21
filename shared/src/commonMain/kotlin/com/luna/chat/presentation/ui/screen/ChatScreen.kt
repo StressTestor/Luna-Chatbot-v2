@@ -40,6 +40,7 @@ import com.luna.chat.presentation.accessibility.AccessibilityUtils
 import com.luna.chat.presentation.accessibility.ChildFriendlyDescriptions
 import com.luna.chat.presentation.performance.PerformanceUtils
 import com.luna.chat.presentation.performance.shouldRenderItem
+import com.luna.chat.platform.rememberImagePicker
 import com.luna.chat.presentation.ui.components.ConversationDrawer
 import com.luna.chat.presentation.ui.components.ImageAttachmentButton
 import com.luna.chat.presentation.ui.components.ImagePreviewDialog
@@ -78,6 +79,12 @@ fun ChatScreen(
     var selectedImageMime by remember { mutableStateOf<String?>(null) }
     var showPreview by remember { mutableStateOf(false) }
     var isAnalyzing by remember { mutableStateOf(false) }
+
+    val imagePicker = rememberImagePicker { bytes, mime ->
+        selectedImageBytes = bytes
+        selectedImageMime = mime
+        showPreview = true
+    }
 
     LaunchedEffect(currentSession.messages.size) {
         if (currentSession.messages.isNotEmpty()) {
@@ -142,9 +149,7 @@ fun ChatScreen(
                 ) {
                     ImageAttachmentButton(
                         enabled = uiState.canSendMessage && !uiState.isLoading && !isAnalyzing,
-                        onClick = {
-                            if (selectedImageBytes != null && selectedImageMime != null) showPreview = true
-                        },
+                        onClick = imagePicker.onClick,
                         modifier = Modifier.testTag("attach_image_action")
                     )
                 }

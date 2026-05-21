@@ -13,6 +13,7 @@ import com.luna.chat.domain.repository.ConversationRepository
 import com.luna.chat.domain.repository.ModelRepository
 import com.luna.chat.domain.repository.UserPreferencesRepository
 import com.luna.chat.domain.usecase.NuggetExtractionUseCase
+import com.luna.chat.domain.usecase.ProcessImageUseCase
 import com.luna.chat.domain.usecase.SendMessageUseCase
 import com.luna.chat.domain.usecase.ContentFilterException
 import kotlinx.coroutines.flow.*
@@ -25,6 +26,7 @@ class ChatViewModel(
     private val nuggetExtractionUseCase: NuggetExtractionUseCase,
     private val chatRepository: ChatRepository,
     private val conversationRepository: ConversationRepository,
+    private val processImageUseCase: ProcessImageUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -211,12 +213,11 @@ class ChatViewModel(
     }
 
     suspend fun processImage(imageBytes: ByteArray, mimeType: String): String? {
-        return try {
-            // ProcessImageUseCase removed from constructor — vision handled separately
-            "Vision analysis unavailable right now."
-        } catch (e: Exception) {
-            "Vision analysis unavailable right now."
-        }
+        return processImageUseCase(imageBytes, mimeType, userPrompt = null)
+            .getOrElse { error ->
+                println("Luna:ViewModel: processImage failed: ${error.message}")
+                error.message ?: "Vision analysis unavailable right now."
+            }
     }
 
     // -- models --
