@@ -157,7 +157,7 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
 
             val selectedModel = userPreferencesRepository.userPreferencesFlow.first().selectedModel
             println("Luna:Repo: building request, model=$selectedModel, msgs=${messages.size}, sysLen=${messages[0].content.length}, facts=${promotedFacts.size}")
-            val request = GroqChatRequest.create(messages = messages, model = selectedModel, maxTokens = 1000)
+            val request = GroqChatRequest.create(messages = messages, model = selectedModel)
             println("Luna:Repo: sending to API...")
             val response = apiClient.sendChatMessage(apiKey, request)
             println("Luna:Repo: got response")
@@ -182,10 +182,10 @@ think: smart older sibling energy. not a teacher, not a parent, not a therapist,
                 }
             }
 
-            // If content was null but reasoning existed, content IS the reasoning
-            // Only set reasoning separately when BOTH content and reasoning exist
+            // If content was null/blank but reasoning existed, content IS the reasoning
+            // Only set reasoning separately when BOTH a real content AND reasoning exist
             val finalContent = parsed.cleanedText
-            val finalReasoning = if (firstChoice?.message?.content != null) rawReasoning else null
+            val finalReasoning = if (!firstChoice?.message?.content.isNullOrBlank()) rawReasoning else null
 
             val aiMessage = ChatMessage(
                 id = Uuid.random().toString(),
